@@ -1,0 +1,15 @@
+Package: rrbgen
+Type: Package
+Title: Robbie's lightweight limited functionality R bgen read/write library
+Version: 0.0.0
+Date: 2019-05-28
+Author: Robert William Davies
+Maintainer: Robert William Davies <robertwilliamdavies@gmail.com>
+Description: A lightweight R bgen library with limited functionality 
+Imports: Rcpp
+LinkingTo: Rcpp
+License: GPL | file LICENSE
+SystemRequirements: C++11
+NeedsCompilation: yes
+Suggests: testthat
+RoxygenNote: 6.0.1
