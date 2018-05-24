@@ -5,21 +5,35 @@
 external_bgen_dir <- "../../../external/bgen/"
 bgen_file <- file.path(external_bgen_dir, "example.16bits.bgen")
 gen_file <- file.path(external_bgen_dir, "example.gen")    
+sample_file <- file.path(external_bgen_dir, "example.sample")
 gen <- read.table(gen_file)
+sample <- read.table(sample_file, sep = " ")
+sample_ids_from_sample_file <- as.character(sample[-c(1:2), ])
 
 ## source("~/Dropbox/rrbgen/rrbgen/R/functions.R")
 
-test_that("can test something", {
+test_that("can test things", {
 
-    ## close(to.read)
+    ## source("~/Dropbox/rrbgen/rrbgen/R/functions.R");     close(to.read)
     to.read <- file(bgen_file, "rb")
 
-    ## header
+    ## header block
     bgen_header <- load_bgen_header(to.read)
     Layout <- bgen_header$Layout
     CompressedSNPBlocks <- bgen_header$CompressedSNPBlocks
+    L_H <- bgen_header$L_H
+    M <- bgen_header$M
     N <- bgen_header$N
+    SampleIdentifiers <- bgen_header$SampleIdentifiers
     expect_equal(bgen_header$N, 500)
+
+    ## sample identifier block
+    out <- load_bgen_sample_identifier_block(to.read, L_H + 4, SampleIdentifiers, N)
+    sample_names <- out$sample_names
+    expect_equal(
+        (sample_ids_from_sample_file),
+        as.character(sample_names)
+    )
 
     ## variant
     out <- load_variant_identifying_data_for_one_snp(to.read, Layout)
@@ -56,3 +70,13 @@ test_that("can test something", {
 
 })
 
+
+test_that("can load sample names", {
+    
+    sample_names <- rrbgen_load_samples(bgen_file)
+    expect_equal(
+        (sample_ids_from_sample_file),
+        as.character(sample_names)
+    )
+
+})

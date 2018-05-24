@@ -1,6 +1,66 @@
+## here is the general purpose API
+## have separate samples and SNPs below
+rrbgen_load <- function(
+    file,
+    samples = NULL,
+    snps = NULL
+) {
+    print("TODO")
+}
+
+
+## just load the sample names
+rrbgen_load_samples <- function(
+    bgen_file
+) {
+    to.read <- file(bgen_file, "rb")
+    ## header
+    bgen_header <- load_bgen_header(to.read)
+    offset <- bgen_header$offset
+    L_H <- bgen_header$L_H
+    SampleIdentifiers <- bgen_header$SampleIdentifiers    
+    N <- bgen_header$N
+    ## samples
+    out <- load_bgen_sample_identifier_block(to.read, L_H + 4, SampleIdentifiers, N)
+    sample_names <- out$sample_names
+    close(to.read)
+    return(sample_names)
+}
+
+
+## just load the SNP information
+rrbgen_load_snps <- function(
+    file
+) {
+
+    close(to.read)
+    to.read <- file(bgen_file, "rb")
+    bgen_header <- load_bgen_header(to.read)
+    
+    L_H <- bgen_header$L_H ## length of header in bytes
+    Layout <- bgen_header$Layout
+    CompressedSNPBlocks <- bgen_header$CompressedSNPBlocks
+    M <- bgen_header$M
+    N <- bgen_header$N
+
+    out <- load_bgen_sample_identifier_block(to.read, SampleIdentifiers, N)     
+    seek(to.read, where =NA)    
+    
+    ##
+    for(i_m in 1:M) {
+        out <- load_variant_identifying_data_for_one_snp(to.read, Layout)
+        variant_info <- out$variant_info
+        num_K_alleles <- out$num_K_alleles
+    }
+
+}
+
+
+
 ## to.read is a file connection
 load_bgen_header <- function(to.read) {
     ## header
+    seek(to.read, where = 0)
     offset <- readBin(to.read, integer(), endian = "little")
     L_H <- readBin(to.read, integer(), endian = "little")
     M <- readBin(to.read, integer(), endian = "little") ## number of variant data blocks
@@ -16,6 +76,23 @@ load_bgen_header <- function(to.read) {
     CompressedSNPBlocks <- sum(as.integer(flag_bits[1:2]) * (2 ** (0:1)))
     Layout <- sum(as.integer(flag_bits[3:6]) * (2 ** (0:3)))
     SampleIdentifiers <- as.integer(flag_bits[32])
+    return(
+        list(
+            offset = offset,
+            L_H = L_H,
+            M = M,
+            N = N,
+            CompressedSNPBlocks = CompressedSNPBlocks,
+            Layout = Layout,
+            SampleIdentifiers = SampleIdentifiers
+        )
+    )
+}
+
+
+load_bgen_sample_identifier_block <- function(to.read, binary_start, SampleIdentifiers, N) {
+    ##
+    seek(to.read, where = binary_start)
     ## sample identifier block
     if (SampleIdentifiers == 1) {
         L_SI <- readBin(to.read, integer(), endian = "little")
@@ -24,26 +101,22 @@ load_bgen_header <- function(to.read) {
             stop("bad interpretation")
         }
         sample_names <- array(NA, N)
+        L_si <- array(NA, N)
         for(i_sample in 1:N) {
-            L_si <- readBin(to.read, size = 2, "integer", n = 1, endian = "little")
-            name_si <- readBin(to.read, size = 1, "raw", n = L_si, endian = "little")
+            L_si[i_sample] <- readBin(to.read, size = 2, "integer", n = 1, endian = "little")
+            name_si <- readBin(to.read, size = 1, "raw", n = L_si[i_sample], endian = "little")
             sample_namei <- rawToChar(name_si)
             sample_names[i_sample] <- sample_namei
         }
     }
+    L_SI <- 8 + 2 * N + sum(L_si) ## length of sample identifier block
     return(
         list(
-            M = M,
-            N = N,
-            CompressedSNPBlocks = CompressedSNPBlocks,
-            Layout = Layout,
-            SampleIdentifiers = SampleIdentifiers,
-            sample_names = sample_names
+            sample_names = sample_names,
+            L_SI = L_SI
         )
     )
 }
-
-
 
 load_variant_identifying_data_for_one_snp <- function(to.read, Layout) {
     ## Variant data blocks
