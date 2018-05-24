@@ -12,6 +12,7 @@ for(key in c("--file=", "--f=")) {
 
 ## specify package
 pkg <- "rrbgen"
+dir.create("releases", showWarnings = FALSE)
 
 ## documentation
 devtools::document(pkg = pkg)

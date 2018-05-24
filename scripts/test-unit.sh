@@ -15,31 +15,35 @@ export PATH=`pwd`/:${PATH}
 logfile="temp.txt"
 # suppressPackageStartupMessages
 # --slave
-R -e 'devtools::document("rrbgen"); devtools::test("rrbgen")' 2>&1 | tee ${logfile}
+R -e 'devtools::document("rrbgen"); devtools::test("rrbgen", reporter = "summary")' 2>&1 | tee ${logfile}
 
 # somehow this gives 0 exit code on parse failure
-started_if_1=`cat ${logfile} | grep 'Testing STITCH' | wc -l`
+started_if_1=`cat ${logfile} | grep 'Testing rrbgen' | wc -l`
 if [ "$started_if_1" -ne "1" ]
 then
+    echo Parse failure
     exit 1
 fi
 
-failure=`cat ${logfile} | grep ^Failed | wc -l`
-warnings=`cat ${logfile} | grep ^Warnings | wc -l `
-errors=`cat ${logfile} | grep Error: | wc -l `
+failure=`cat ${logfile} | grep "Failure: " | wc -l`
+warnings=`cat ${logfile} | grep " Warnings " | wc -l `
+errors=`cat ${logfile} | grep " Error: " | wc -l `
 
 rm ${logfile}
 
 if [ "$failure" -gt "0" ]
 then
+    echo There are failures, see above
     exit 1
 fi
 if [ "$warnings" -gt "0" ]
 then
+    echo There are warnings, see above    
     exit 1
 fi
 if [ "$errors" -gt "0" ]
 then
+    echo There are errors, see above
     exit 1
 fi
 

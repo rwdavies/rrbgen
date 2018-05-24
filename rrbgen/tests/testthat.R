@@ -1,4 +1,4 @@
 library(testthat)
 library(rrbgen)
 
-test_check("rrbgen")
+test_dir("rrbgen", reporter = "minimal", wrap = FALSE)
