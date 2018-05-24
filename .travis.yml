@@ -1,0 +1,13 @@
+language: r
+
+script:
+  - ./scripts/all-tests.sh
+
+os:
+  - linux
+
+#before_install:
+# - sudo apt-get install r-base && R -h
+
+#install:
+# - ./scripts/install.sh
