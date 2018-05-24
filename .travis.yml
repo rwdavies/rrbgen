@@ -7,7 +7,7 @@ os:
 # - sudo apt-get install r-base && R -h
 
 install:
- - echo "no external dependencies yet"
+ - ./scripts/install-r-dependencies.sh
 
 script:
   - ./scripts/all-tests.sh
