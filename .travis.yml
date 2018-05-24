@@ -7,7 +7,7 @@ os:
 # - sudo apt-get install r-base && R -h
 
 install:
- - ./scripts/install-r-dependencies.sh
+ - ./scripts/install-r-dependencies.R
 
 script:
   - ./scripts/all-tests.sh
