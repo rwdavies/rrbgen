@@ -10,26 +10,13 @@ for(key in c("--file=", "--f=")) {
     }
 }
 
-clean_build <- TRUE
-if (Sys.getenv("DIRTY_BUILD") == "TRUE")
-    clean_build <- FALSE
-
 ## specify package
 pkg <- "rrbgen"
-## Sys.setenv(SEQLIB_ROOT = file.path(getwd(), "SeqLib"))
-root_dir <- getwd()
 
 ## documentation
 devtools::document(pkg = pkg)
 
 ## make the tarball
-print("Build")
-if (clean_build == TRUE) {
-    SeqLib_dir <- file.path(pkg, "src", "SeqLib")
-    setwd(SeqLib_dir)
-    system(paste0("make clean"))
-    setwd(root_dir)
-}
 package_tarball <- devtools::build(pkg = pkg, manual = TRUE)
 version <- unlist(
     strsplit(unlist(strsplit(basename(package_tarball), "rrbgen_")), ".tar.gz")
