@@ -10,12 +10,12 @@ gen <- read.table(gen_file)
 sample <- read.table(sample_file, sep = " ")
 sample_ids_from_sample_file <- as.character(sample[-c(1:2), ])
 
-## source("~/Dropbox/rrbgen/rrbgen/R/functions.R")
+## source("~/Dropbox/rrbgen/rrbgen/R/read-functions.R")
 
 test_that("can test things", {
 
     ##
-    ## source("~/Dropbox/rrbgen/rrbgen/R/functions.R");     close(to.read)
+    ## source("~/Dropbox/rrbgen/rrbgen/R/read-functions.R");     close(to.read)
     to.read <- file(bgen_file, "rb")
 
     ## header block

@@ -3,9 +3,9 @@ write_bgen_header <- function(
     offset,
     M,
     N,
-    SampleIdentifiers,
-    Layout,
-    CompressedSNPBlocks,
+    SampleIdentifiers = 1,
+    Layout = 2,
+    CompressedSNPBlocks = 1,
     free = NULL
 ) {
     ## check flags OK
@@ -54,4 +54,26 @@ write_bgen_header <- function(
     flag_bits[3:6] <- intToBits(Layout)[1:4]
     flag_bits[32] <- as.raw(SampleIdentifiers)
     writeBin(packBits(flag_bits), to.write, endian = "little")
+    return(NULL)
+}
+
+
+write_bgen_sample_identifier_block <- function(to.write, binary_start, sample_names, SampleIdentifiers = 1) {
+    ##
+    seek(to.write, where = binary_start)
+    if (SampleIdentifiers == 1) {
+        ## first, convert and build rest
+        N <- length(sample_names)        
+        sample_names_as_raw <- lapply(sample_names, charToRaw)
+        L_Si <- lapply(sample_names_as_raw, length) ## per-sample
+        L_SI <- as.integer(8 + 2 * N + sum(unlist(L_Si))) ## total
+        ## can now write
+        writeBin(L_SI, to.write, endian = "little")
+        writeBin(as.integer(N), to.write, endian = "little")
+        for(iSample in 1:N) {
+            writeBin(L_Si[[iSample]], to.write, size = 2, endian = "little")
+            writeBin(sample_names_as_raw[[iSample]], to.write, size = 1, endian = "little")
+        }
+    }
+    return(NULL)
 }

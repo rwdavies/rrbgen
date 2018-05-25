@@ -118,6 +118,8 @@ load_bgen_header <- function(to.read) {
 load_bgen_sample_identifier_block <- function(to.read, binary_start, SampleIdentifiers, N) {
     ##
     seek(to.read, where = binary_start)
+    sample_names <- NULL
+    L_SI <- 0
     ## sample identifier block
     if (SampleIdentifiers == 1) {
         L_SI <- readBin(to.read, integer(), endian = "little")
@@ -133,8 +135,8 @@ load_bgen_sample_identifier_block <- function(to.read, binary_start, SampleIdent
             sample_namei <- rawToChar(name_si)
             sample_names[i_sample] <- sample_namei
         }
+        L_SI <- 8 + 2 * N + sum(L_si) ## length of sample identifier block        
     }
-    L_SI <- 8 + 2 * N + sum(L_si) ## length of sample identifier block
     return(
         list(
             sample_names = sample_names,
