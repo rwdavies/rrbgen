@@ -90,7 +90,9 @@ load_bgen_header <- function(to.read) {
     N <- readBin(to.read, integer(), endian = "little") ## number of samples
     ## check magic
     magic <- readBin(to.read, size = 1, "raw", n = 4, endian = "little")
-    rawToChar(magic) ## yay
+    if ((rawToChar(magic) != "bgen") | rawToChar(magic) == "") {
+        stop("magic bytes does not equal bgen")
+    }
     ## I think free is freer than this
     free <- readBin(to.read, integer(),  endian = "little", n = (L_H - 20) / 4)
     ## 
