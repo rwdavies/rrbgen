@@ -75,6 +75,7 @@ rrbgen_load_variant_info <- function(
     M <- bgen_header$M
     ## load all variants
     out <- load_variant_identifying_data_for_all_snps(to.read, offset, Layout, M, CompressedSNPBlocks)
+    close(to.read)
     return(out$snp_info)
 }
 
@@ -90,8 +91,8 @@ load_bgen_header <- function(to.read) {
     N <- readBin(to.read, integer(), endian = "little") ## number of samples
     ## check magic
     magic <- readBin(to.read, size = 1, "raw", n = 4, endian = "little")
-    if ((rawToChar(magic) != "bgen") | rawToChar(magic) == "") {
-        stop("magic bytes does not equal bgen")
+    if ((rawToChar(magic) != "bgen") & (rawToChar(magic) != "")) {
+        stop(paste0("magic bytes does not equal bgen:", rawToChar(magic)))
     }
     ## I think free is freer than this
     free <- readBin(to.read, integer(),  endian = "little", n = (L_H - 20) / 4)
@@ -211,7 +212,9 @@ load_variant_identifying_data_for_one_snp <- function(to.read, binary_start, Lay
     var_position <- readBin(to.read, size = 4, "integer", n = 1, endian = "little")
     ## re-produce 
     ## number of K-alleles
-    num_K_alleles <- readBin(to.read, size = 2, "integer", n = 1, endian = "little")
+    if (Layout == 2) {
+        num_K_alleles <- readBin(to.read, size = 2, "integer", n = 1, endian = "little")
+    }
     alleles <- array(NA, num_K_alleles)
     L_ai <- array(NA, num_K_alleles)
     for(i_allele in 1:num_K_alleles) {
@@ -243,9 +246,10 @@ load_variant_identifying_data_for_one_snp <- function(to.read, binary_start, Lay
     }
     ## get the total number of bytes this used. note this now includes C and D
     L_vid <- L_vid + 16 + 4 * num_K_alleles + L_id + L_rsid + L_chr + sum(L_ai)
-    if (Layout == 1) {
-        L_vid <- L_vid + 4
-    }
+    ## I think this is an error - this is captured above
+    ## if (Layout == 1) {
+    ##     L_vid <- L_vid + 4
+    ## }
     return(
         list(
             variant_info = variant_info,

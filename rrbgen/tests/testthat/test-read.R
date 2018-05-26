@@ -3,7 +3,7 @@
 ## need to go back 3 directories
 ## library('testthat'); setwd("~/Dropbox/rrbgen/rrbgen/tests/testthat")
 external_bgen_dir <- "../../../external/bgen/"
-bgen_file <- file.path(external_bgen_dir, "example.16bits.bgen")
+external_bgen_file <- file.path(external_bgen_dir, "example.16bits.bgen")
 gen_file <- file.path(external_bgen_dir, "example.gen")    
 sample_file <- file.path(external_bgen_dir, "example.sample")
 gen <- read.table(gen_file)
@@ -15,8 +15,8 @@ sample_ids_from_sample_file <- as.character(sample[-c(1:2), ])
 test_that("can test things", {
 
     ##
-    ## source("~/Dropbox/rrbgen/rrbgen/R/read-functions.R");     close(to.read)
-    to.read <- file(bgen_file, "rb")
+    ## source("~/Dropbox/rrbgen/rrbgen/R/read-functions.R");source("~/Dropbox/rrbgen/rrbgen/R/write-functions.R");     close(to.read)
+    to.read <- file(external_bgen_file, "rb")
 
     ## header block
     bgen_header <- load_bgen_header(to.read)
@@ -80,7 +80,7 @@ test_that("can test things", {
 
 test_that("can load sample names", {
     
-    sample_names <- rrbgen_load_samples(bgen_file)
+    sample_names <- rrbgen_load_samples(external_bgen_file)
     expect_equal(
         (sample_ids_from_sample_file),
         as.character(sample_names)
@@ -90,7 +90,7 @@ test_that("can load sample names", {
 
 test_that("can load SNPs", {
     
-    var_info <- rrbgen_load_variant_info(bgen_file)
+    var_info <- rrbgen_load_variant_info(external_bgen_file)
 
     expect_equal(as.integer(var_info[, 1]), gen[, 1])
     for(i in 2:6) {
@@ -101,7 +101,7 @@ test_that("can load SNPs", {
 
 test_that("can load everything", {
 
-    out <- rrbgen_load(bgen_file)
+    out <- rrbgen_load(external_bgen_file)
     gp <- out$gp
 
     ## check all genotypes below

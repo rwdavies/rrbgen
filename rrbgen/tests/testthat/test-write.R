@@ -1,8 +1,7 @@
 test_that("can write a simple bgen header", {
 
-    offset <- 0 ## meaningless in this context
+    L_SI <- 100 ## ignored in this context since no sample names yet
     free <- NULL ## ignored
-    L_H <- 20 ## free being NULL makes this 20 by default
     M <- 10
     N <- 20
     SampleIdentifiers <- 1
@@ -11,15 +10,15 @@ test_that("can write a simple bgen header", {
 
     bgen_file <- tempfile()
     to.write <- file(bgen_file, "wb")    
-    write_bgen_header(
+    L_H <- write_bgen_header(
         to.write,
-        offset,
+        L_SI,
         M,
         N,
         SampleIdentifiers,
         Layout,
         CompressedSNPBlocks,
-        free = NULL
+        free
     )
     close(to.write)
 
@@ -28,7 +27,7 @@ test_that("can write a simple bgen header", {
     close(to.read)
 
     ## check
-    expect_equal(bgen_header$offset, offset)
+    expect_equal(bgen_header$offset, L_H + L_SI) ## by definition
     expect_equal(bgen_header$L_H, 20)
     expect_equal(bgen_header$M, M)
     expect_equal(bgen_header$CompressedSNPBlocks, CompressedSNPBlocks)
@@ -41,27 +40,12 @@ test_that("can write a simple bgen header", {
 test_that("can write a bgen file with header and sample names", {
 
     sample_names <- c("samp1", "jimmy445", "samp3")
-    offset <- 0 ## still meaningless in this context
-    M <- 10 ## still meaningless in this context
-    N <- length(sample_names)
-    L_H <- 20 ## since free is NULL
-    
+
     bgen_file <- tempfile()
-    to.write <- file(bgen_file, "wb")
-    ## header
-    write_bgen_header(
-        to.write,
-        offset,
-        M,
-        N
-    )
-    write_bgen_sample_identifier_block(
-        to.write,
-        binary_start = L_H + 4,
+    rrbgen_write(
+        bgen_file,
         sample_names
     )
-    close(to.write)
-
     sample_names_from_bgen <- rrbgen_load_samples(bgen_file)
     
     expect_equal(
@@ -69,5 +53,36 @@ test_that("can write a bgen file with header and sample names", {
         sample_names
     )
     
+})
+
+
+test_that("can write a bgen file with header, sample names and SNP information", {
+
+    ## library("testthat"); setwd("~/Dropbox/rrbgen/rrbgen/R/"); source("read-functions.R") ;source("write-functions.R"); source("test-drivers.R")
+    
+    sample_names <- c("samp1", "jimmy445", "samp3")
+    var_info <- make_fake_var_info(12)
+    
+    bgen_file <- tempfile()
+
+    rrbgen_write(
+        bgen_file,
+        sample_names = sample_names,
+        var_info = var_info
+    )
+    
+    sample_names_from_bgen <- rrbgen_load_samples(bgen_file)
+    expect_equal(
+        as.character(sample_names_from_bgen),
+        as.character(sample_names)
+    )
+    
+    loaded_var_info <- rrbgen_load_variant_info(bgen_file)
+
+    expect_equal(
+        loaded_var_info,
+        var_info
+    )
+
 
 })
