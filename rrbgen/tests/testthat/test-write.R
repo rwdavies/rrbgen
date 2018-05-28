@@ -58,7 +58,6 @@ test_that("can write a bgen file with header and sample names", {
 
 test_that("can write a bgen file with header, sample names and SNP information", {
 
-   library("testthat"); setwd("~/Dropbox/rrbgen/rrbgen/R/"); source("read-functions.R") ;source("write-functions.R"); source("test-drivers.R")    
     sample_names <- c("samp1", "jimmy445", "samp3")
     var_info <- make_fake_var_info(12)
     CompressedSNPBlocks <- 1 ## compressed
@@ -88,6 +87,7 @@ test_that("can write a bgen file with header, sample names and SNP information",
 
 test_that("can write a full bgen file", {
 
+    ## library("testthat"); setwd("~/Dropbox/rrbgen/rrbgen/R/"); source("read-functions.R") ;source("write-functions.R"); source("test-drivers.R")
     sample_names <- c("edgar", "gsp", "silva", "lesnar")
     var_info <- make_fake_var_info(8)
     var_ids <- var_info[, "snpid"]
@@ -97,15 +97,15 @@ test_that("can write a full bgen file", {
 
     bgen_file <- tempfile()
 
-    ## for (CompressedSNPBlocks in c(0, 1)) {
-
     CompressedSNPBlocks <- 1
     
     rrbgen_write(
         bgen_file,
         sample_names = sample_names,
         var_info = var_info,
-        gp = gp
+        gp = gp,
+        CompressedSNPBlocks = CompressedSNPBlocks,
+        B_bit_prob = 16
     )
     
     out <- rrbgen_load(bgen_file)
@@ -116,7 +116,9 @@ test_that("can write a full bgen file", {
     expect_equal(dimnames(gp)[[3]], dimnames(loaded_gp)[[3]])
 
     ## this isn't quite right. investigate
-    tolerance <- 1e-2
+    ## WRITE A TEST FOR 8, 16, 24, 32 BITS
+    tolerance <- 1e-4
+    print(range(gp - loaded_gp, na.rm = TRUE))    
     sum(abs(gp - loaded_gp) > tolerance, na.rm = TRUE)
 
     expect_equal(as.logical(is.na(gp) ), as.logical(is.na(loaded_gp)))

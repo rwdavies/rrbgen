@@ -482,7 +482,7 @@ prepare_genotypes_for_one_snp <- function(
         for(i_gen in 1:2) {
             x_hom_ref <- round(gp[i_snp, i_sample, c("hom_ref", "het")[i_gen]] * const_2_bit)
             x_bits <- intToBits(x_hom_ref)
-            for(i_B in (B_bit_prob / 8)) {
+            for(i_B in 1:(B_bit_prob / 8)) {
                 ## (2 * B_bit_prob_divide_8) * (i_sample - 1) + 2 * (i_B - 1) + i_gen
                 data[last_byte_used + 1:B_bit_prob_divide_8] <-
                     packBits(x_bits[const_where[[i_B]]], type = "raw")
