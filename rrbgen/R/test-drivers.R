@@ -9,3 +9,24 @@ make_fake_var_info <- function(M) {
     var_info[, "alt"] <- c("A", "C", "G", "T")[5 - match(var_info[, "ref"], c("A", "C", "G", "T"))]
     return(var_info)
 }
+
+make_fake_gp <- function(sample_names, var_ids, random_fraction = 0.05) {
+    N <- length(sample_names)
+    M <- length(var_ids)
+    gp <- array(runif(M * N * 3), c(M, N, 3))
+    dimnames(gp)[[1]] <- var_ids
+    dimnames(gp)[[2]] <- sample_names
+    dimnames(gp)[[3]] <- c("hom_ref", "het", "hom_alt")
+    ## now fill with random! include some NAs
+    for(i_snp in 1:M) {
+        for(i_sample in 1:N) {
+            if (runif(1) < random_fraction) {
+                gp[i_snp, i_sample, ] <- NA
+            } else {
+                gp[i_snp, i_sample, ] <- gp[i_snp, i_sample, ] / sum(gp[i_snp, i_sample, ])
+            }
+        }
+    }
+    ##
+    return(gp)
+}

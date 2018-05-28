@@ -2,8 +2,12 @@
 ## later, instruct only loading certain samples or snps
 ## have separate samples and SNPs below
 rrbgen_load <- function(
-    bgen_file
+    bgen_file,
+    gp_names_col = "snpid"
 ) {
+    if (! (gp_names_col %in% c("snpid", "rsid"))) {
+        stop("Please select gp_in_names as one of snpid or rsid, to select how to name dimnames(gp)[[1]]")
+    }
     ## here load all samples and variants, unless instructed otherwise
     to.read <- file(bgen_file, "rb")
     ## header
@@ -34,6 +38,10 @@ rrbgen_load <- function(
         out <- load_genotypes_for_one_snp(to.read, binary_start, num_K_alleles, N, CompressedSNPBlocks, C)
         gp[i_var, , ] <- out$gen_probs
     }
+    ## add names
+    dimnames(gp)[[1]] <- snp_info[, gp_names_col]
+    dimnames(gp)[[2]] <- sample_names
+    dimnames(gp)[[3]] <- c("hom_ref", "het", "hom_alt")
     return(
         list(
             gp = gp,
@@ -294,8 +302,8 @@ load_genotypes_for_one_snp <- function(to.read, binary_start, num_K_alleles, N, 
     if ((phased_flag != 1) & (phased_flag != 0)) {
         stop("problem with file, phased flag wrong")
     }
-    bit_prob <- as.integer(readBin(dataC, size = 1, "raw", n = 1, endian = "little"))
-    if ((bit_prob < 1) | (32 < bit_prob)) {
+    B_bit_prob <- as.integer(readBin(dataC, size = 1, "raw", n = 1, endian = "little"))
+    if ((B_bit_prob < 1) | (32 < B_bit_prob)) {
         stop("bit prob is outside range")
     }
     if (phased_flag == 1) {
@@ -306,23 +314,23 @@ load_genotypes_for_one_snp <- function(to.read, binary_start, num_K_alleles, N, 
         ## remaining_bytes <- D - 4 - 2 - 1 - 1 - N - 1 - 1
         ## dosage <- array(NA, N)
         gen_probs <- array(NA, c(N, 3))
-        if ((bit_prob %in% c(8, 16, 24, 32)) == FALSE) {
-        stop("non multiple of 8 bit_prob not supported")
+        if ((B_bit_prob %in% c(8, 16, 24, 32)) == FALSE) {
+        stop("non multiple of 8 B_bit_prob not supported")
         }
         for(iSample in 1:N) {
             if (ploidy[iSample] != 2) {
                 stop("this code does not support non-2 ploidy")
             }
-            b_hom_ref <- readBin(dataC, size = 1, "raw", n = bit_prob / 8, endian = "little")
-            b_het <- readBin(dataC, size = 1, "raw", n = bit_prob / 8, endian = "little")        
+            b_hom_ref <- readBin(dataC, size = 1, "raw", n = B_bit_prob / 8, endian = "little")
+            b_het <- readBin(dataC, size = 1, "raw", n = B_bit_prob / 8, endian = "little")        
             if (is_missing[iSample]) {
                 ## dosage[iSample] <- NA
                 gen_probs[iSample, 1:3] <- NA
             } else {
-                x <- sum(as.integer(rawToBits(b_hom_ref)) * (2 ** (0:(bit_prob - 1)))    )
-                p_hom_ref <- x / (2 ** bit_prob)
-                x <- sum(as.integer(rawToBits(b_het)) * (2 ** (0:(bit_prob - 1)))    )
-                p_het <- x / (2 ** bit_prob)
+                x <- sum(as.integer(rawToBits(b_hom_ref)) * (2 ** (0:(B_bit_prob - 1)))    )
+                p_hom_ref <- x / (2 ** B_bit_prob)
+                x <- sum(as.integer(rawToBits(b_het)) * (2 ** (0:(B_bit_prob - 1)))    )
+                p_het <- x / (2 ** B_bit_prob)
                 p_hom_alt <- 1 - p_hom_ref - p_het
                 ## dosage[iSample] <- p_het * 2 * p_hom_alt
                 gen_probs[iSample, 1:3] <- c(p_hom_ref, p_het, p_hom_alt)
