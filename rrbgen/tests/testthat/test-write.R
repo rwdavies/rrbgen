@@ -58,9 +58,6 @@ test_that("can write a bgen file with header and sample names", {
 
 test_that("can write a bgen file with header, sample names and SNP information", {
 
-    ##
-    library("testthat"); setwd("~/Dropbox/rrbgen/rrbgen/R/"); source("read-functions.R") ;source("write-functions.R"); source("test-drivers.R")
-    
     sample_names <- c("samp1", "jimmy445", "samp3")
     var_info <- make_fake_var_info(12)
     CompressedSNPBlocks <- 1 ## compressed
