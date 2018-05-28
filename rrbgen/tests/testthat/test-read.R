@@ -10,12 +10,12 @@ gen <- read.table(gen_file)
 sample <- read.table(sample_file, sep = " ")
 sample_ids_from_sample_file <- as.character(sample[-c(1:2), ])
 
-## source("~/Dropbox/rrbgen/rrbgen/R/read-functions.R")
+
 
 test_that("can test things", {
 
     ##
-    ## source("~/Dropbox/rrbgen/rrbgen/R/read-functions.R");source("~/Dropbox/rrbgen/rrbgen/R/write-functions.R");     close(to.read)
+    ## library("testthat"); setwd("~/Dropbox/rrbgen/rrbgen/R/"); source("read-functions.R") ;source("write-functions.R"); source("test-drivers.R");  setwd("~/Dropbox/rrbgen/rrbgen/tests/testthat")    ;      close(to.read)
     to.read <- file(external_bgen_file, "rb")
 
     ## header block
@@ -37,7 +37,6 @@ test_that("can test things", {
         (sample_ids_from_sample_file),
         as.character(sample_names)
     )
-
     
     ## variant
     out <- load_variant_identifying_data_for_one_snp(to.read, L_SI + L_H + 4, Layout, CompressedSNPBlocks)
@@ -53,8 +52,8 @@ test_that("can test things", {
     expect_equal(as.character(variant_info["ref"]), as.character(gen[1, 5]))
     expect_equal(as.character(variant_info["alt"]), as.character(gen[1, 6]))
 
-    ## genotypes
-    out <- load_genotypes_for_one_snp(to.read, offset + 4 + L_vid, num_K_alleles, N, CompressedSNPBlocks, C) 
+    ## genotypes - last two 4's are for C and D
+    out <- load_genotypes_for_one_snp(to.read, (offset + 4) + L_vid + 4 + 4, num_K_alleles, N, CompressedSNPBlocks, C) 
 
     tolerance <- 1e-4
     ## check a few 
@@ -89,7 +88,7 @@ test_that("can load sample names", {
 })
 
 test_that("can load SNPs", {
-    
+
     var_info <- rrbgen_load_variant_info(external_bgen_file)
 
     expect_equal(as.integer(var_info[, 1]), gen[, 1])

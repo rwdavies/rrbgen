@@ -58,6 +58,7 @@ test_that("can write a bgen file with header and sample names", {
 
 test_that("can write a bgen file with header, sample names and SNP information", {
 
+   library("testthat"); setwd("~/Dropbox/rrbgen/rrbgen/R/"); source("read-functions.R") ;source("write-functions.R"); source("test-drivers.R")    
     sample_names <- c("samp1", "jimmy445", "samp3")
     var_info <- make_fake_var_info(12)
     CompressedSNPBlocks <- 1 ## compressed
@@ -83,15 +84,10 @@ test_that("can write a bgen file with header, sample names and SNP information",
         var_info
     )
 
-
 })
 
 test_that("can write a full bgen file", {
 
-    skip("wer")
-    
-   library("testthat"); setwd("~/Dropbox/rrbgen/rrbgen/R/"); source("read-functions.R") ;source("write-functions.R"); source("test-drivers.R")
-    
     sample_names <- c("edgar", "gsp", "silva", "lesnar")
     var_info <- make_fake_var_info(8)
     var_ids <- var_info[, "snpid"]
@@ -103,26 +99,26 @@ test_that("can write a full bgen file", {
 
     ## for (CompressedSNPBlocks in c(0, 1)) {
 
-        CompressedSNPBlocks <- 0
-        rrbgen_write(
-            bgen_file,
-            sample_names = sample_names,
-            var_info = var_info,
-            gp = gp
-        )
+    CompressedSNPBlocks <- 1
+    
+    rrbgen_write(
+        bgen_file,
+        sample_names = sample_names,
+        var_info = var_info,
+        gp = gp
+    )
+    
+    out <- rrbgen_load(bgen_file)
+    loaded_gp <- out$gp
 
-        out <- rrbgen_load(bgen_file)
-        gp <- out$gp
+    expect_equal(dimnames(gp)[[1]], dimnames(loaded_gp)[[1]])
+    expect_equal(dimnames(gp)[[2]], as.character(dimnames(loaded_gp)[[2]])) ## argh
+    expect_equal(dimnames(gp)[[3]], dimnames(loaded_gp)[[3]])
 
-        ## OK THIS RUNS
-        ## NOW CHECK
-        ## I AM NOT 100% SURE IF THERE IS AN OFF-BY-1 error in the offsets
-        ## for the genotype in THIS BIT OF CODE
-        ## Genotype block (Layout 2) (Minus C and D)
-        
+    ## this isn't quite right. investigate
+    tolerance <- 1e-2
+    sum(abs(gp - loaded_gp) > tolerance, na.rm = TRUE)
 
-        ## CHECK!
-    ## }
-
+    expect_equal(as.logical(is.na(gp) ), as.logical(is.na(loaded_gp)))
     
 })

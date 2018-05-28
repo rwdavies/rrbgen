@@ -28,11 +28,19 @@ rrbgen_load <- function(
     per_var_offset <- out$per_var_offset
     per_var_C <- out$per_var_C
     per_var_L_vid <- out$per_var_L_vid
+    per_var_L_gdb <- out$per_var_L_gdb
     per_var_num_K_alleles <- out$per_var_num_K_alleles
     ## load genotypes
     gp <- array(NA, c(M, N, 3))
     for(i_var in 1:M) {
         binary_start <- per_var_offset[i_var] + per_var_L_vid[i_var]
+        ## so need to skip C and/or D
+        if (CompressedSNPBlocks == 1) {
+            binary_start <- binary_start + 8
+        } else {
+            binary_start <- binary_start + 4
+        }
+        ## now this is reading genotypes not full genotype data block        
         C <- per_var_C[i_var]
         num_K_alleles <- per_var_num_K_alleles[i_var]
         out <- load_genotypes_for_one_snp(to.read, binary_start, num_K_alleles, N, CompressedSNPBlocks, C)
@@ -162,26 +170,20 @@ load_variant_identifying_data_for_all_snps <- function(to.read, offset, Layout, 
     per_var_offset[1] <- offset + 4
     per_var_C <- array(NA, M)
     per_var_L_vid <- array(NA, M)
+    per_var_L_gdb <- array(NA, M)
     per_var_num_K_alleles <- array(NA, M)
     ## 
     snp_info <- array(NA, c(M, 6))
     colnames(snp_info) <- c("chr", "snpid", "rsid", "position", "ref", "alt")
-    ##     
+    ##
     for(i_var in 1:M) {
         out <- load_variant_identifying_data_for_one_snp(to.read, per_var_offset[i_var], Layout, CompressedSNPBlocks)
         per_var_C[i_var] <- out$C
         per_var_L_vid[i_var] <- out$L_vid
         per_var_num_K_alleles[i_var] <- out$num_K_alleles
+        per_var_L_gdb[i_var] <- out$L_gdb
         if (i_var < M) {
-            per_var_offset[i_var + 1] <- per_var_offset[i_var] + out$L_vid
-            if (CompressedSNPBlocks == 1) {
-                ## compression, have stored D
-                per_var_offset[i_var + 1] <- per_var_offset[i_var + 1] + (out$C - 4)
-            } else if (CompressedSNPBlocks == 0) {
-                ## so D is not stored on it's own
-                ## so D=C and out$C is the same as out$D
-                per_var_offset[i_var + 1] <- per_var_offset[i_var + 1] + out$C
-            }
+            per_var_offset[i_var + 1] <- per_var_offset[i_var] + out$L_vid + out$L_gdb
         }
         snp_info[i_var, ] <- out$variant_info
     }
@@ -191,6 +193,7 @@ load_variant_identifying_data_for_all_snps <- function(to.read, offset, Layout, 
             per_var_offset = per_var_offset,
             per_var_C = per_var_C,
             per_var_L_vid = per_var_L_vid,
+            per_var_L_gdb = per_var_L_gdb,
             per_var_num_K_alleles = per_var_num_K_alleles
         )
     )
@@ -201,11 +204,9 @@ load_variant_identifying_data_for_all_snps <- function(to.read, offset, Layout, 
 ## Note I am including C and/or D from the genotype data block in this
 load_variant_identifying_data_for_one_snp <- function(to.read, binary_start, Layout, CompressedSNPBlocks) {
     seek(to.read, where = binary_start)
-    L_vid <- 0
     ## Variant data blocks
     if (Layout == 1) {
         N <- readBin(to.read, integer(), endian = "little")
-        L_vid <- L_vid + 4
     }
     ## variant ID
     L_id <- readBin(to.read, size = 2, "integer", n = 1, endian = "little")
@@ -250,26 +251,34 @@ load_variant_identifying_data_for_one_snp <- function(to.read, binary_start, Lay
     if (Layout == 2) {    
         if (CompressedSNPBlocks > 0) {
             D <- readBin(to.read, size = 4, "integer", n = 1, endian = "little") ## length after de-compression
-            ## L_vid <- L_vid + 4 ## D is added but not C?
         } else {
             D <- C
         }
     }
-    ## get the total number of bytes this used
-    ## note this DOES include C which MUST be present
-    ## it does NOT include D
-    L_vid <- L_vid + 16 + 4 * num_K_alleles + L_id + L_rsid + L_chr + sum(L_ai) + 4
-    ## I think this is an error - this is captured above
-    ## if (Layout == 1) {
-    ##     L_vid <- L_vid + 4
-    ## }
+    ## so L_vid is length of variant identification block
+    if (Layout == 1) {
+        L_vid <- 16 + 4 * num_K_alleles + L_id + L_rsid + L_chr + sum(L_ai)
+    } else if (Layout == 2) {
+        L_vid <- 12 + 4 * num_K_alleles + L_id + L_rsid + L_chr + sum(L_ai)
+    }
+    ## and L_gdb is the length of the genotype data block
+    ## together, L_vidand L_gdb are the entire length of the information for that variant 
+    L_gdb <- 4 ## for C
+    if (CompressedSNPBlocks == 1) {
+        ## store D then genotype probability data of length C
+        L_gdb <- L_gdb + (C - 4) + 4
+    } else if (CompressedSNPBlocks == 0) {
+        ## store no D 
+        L_gdb <- L_gdb + C
+    }
     return(
         list(
             variant_info = variant_info,
             num_K_alleles = num_K_alleles,
             C = C,
             D = D,
-            L_vid = L_vid
+            L_vid = L_vid,
+            L_gdb = L_gdb
         )
     )
 }
@@ -280,7 +289,7 @@ load_variant_identifying_data_for_one_snp <- function(to.read, binary_start, Lay
 load_genotypes_for_one_snp <- function(to.read, binary_start, num_K_alleles, N, CompressedSNPBlocks, C) {
     seek(to.read, where = binary_start)    
     ## Genotype data block
-    data_compressed <- readBin(to.read, size = 1, "raw", n = C, endian = "little")
+    data_compressed <- readBin(to.read, size = 1, "raw", n = C - 4, endian = "little")
     if (CompressedSNPBlocks == 1) {
         ## Indicates SNP block probability data is compressed using zlib's compress() function.
         data <- memDecompress(data_compressed, type = "gzip")

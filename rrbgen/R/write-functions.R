@@ -244,18 +244,21 @@ prepare_variant_identifying_data_for_all_snps <- function(
         sapply(per_var_rsid_raw, length) +
         sapply(per_var_chr_raw, length) + 
         sapply(per_var_ref_allele_raw, length) + 
-        sapply(per_var_alt_allele_raw, length) +
-        4 ## to store C
-    ##if (Layout == 2) {
-    ##    if (CompressedSNPBlocks > 0) {
-    ##        per_var_L_vid <- per_var_L_vid + 4 ## to store D
-    ##    }
-    ##}
-    ##
+        sapply(per_var_alt_allele_raw, length)
+    ## separately, store length of genotype data block
+    per_var_L_gdb <- rep(4, M) ## for C
+    if (CompressedSNPBlocks == 1) {
+        ## store D then genotype probability data of length C
+        per_var_L_gdb <- per_var_L_gdb + (per_var_C - 4) + 4
+    } else if (CompressedSNPBlocks == 0) {
+        ## store no D 
+        per_var_L_gdb <- per_var_L_gdb + per_var_C
+    }
+    ## 
     per_var_offset <- array(NA, M)
     per_var_offset[1] <- offset + 4
     for(i_var in 2:M) {
-        per_var_offset[i_var] <- per_var_offset[i_var - 1] + per_var_L_vid[i_var - 1] + per_var_C[i_var - 1]
+        per_var_offset[i_var] <- per_var_offset[i_var - 1] + per_var_L_vid[i_var - 1] + per_var_L_gdb[i_var - 1]
     }
     return(
         list(
@@ -266,7 +269,8 @@ prepare_variant_identifying_data_for_all_snps <- function(
             per_var_ref_allele_raw = per_var_ref_allele_raw,
             per_var_alt_allele_raw = per_var_alt_allele_raw,
             per_var_offset = per_var_offset,
-            per_var_L_vid = per_var_L_vid
+            per_var_L_vid = per_var_L_vid,
+            per_var_L_gdb = per_var_L_gdb
         )
     )
 }
@@ -292,6 +296,7 @@ write_variant_identifying_data_and_genotypes_for_all_snps <- function(
     per_var_alt_allele_raw <- var_info_raw_list$per_var_alt_allele_raw
     per_var_offset <- var_info_raw_list$per_var_offset
     per_var_L_vid <- var_info_raw_list$per_var_L_vid
+    per_var_L_gdb <- var_info_raw_list$per_var_L_gdb
     for(i_var in 1:M) {
         ## Variant identifying data (Plus C and D)
         write_variant_identifying_data_for_one_snp(
@@ -309,10 +314,14 @@ write_variant_identifying_data_and_genotypes_for_all_snps <- function(
             Layout = Layout,
             CompressedSNPBlocks = CompressedSNPBlocks
         )
-        ## how long 
+        ## so assume compressed bit is length C not C-4 
         ## Genotype block (Layout 2) (Minus C and D)
         if (is.null(dataC_list) == FALSE) {
-            seek(to.write, where = per_var_offset[i_var] + per_var_L_vid[i_var])
+            where <- per_var_offset[i_var] + per_var_L_vid[i_var] + 4
+            if (CompressedSNPBlocks == 1) {
+                where <- where + 4
+            }
+            seek(to.write, where = where)
             writeBin(dataC_list[[i_var]], to.write, size = 1, endian = "little")
         }
     }
@@ -487,7 +496,7 @@ prepare_genotypes_for_one_snp <- function(
     } else {
         dataC <- data
     }
-    C <- length(dataC)
+    C <- length(dataC) + 4
     D <- length(data)
     return(
         list(
@@ -498,15 +507,3 @@ prepare_genotypes_for_one_snp <- function(
         )
     )
 }
-
-
-write_genotype_probabilities_for_one_snp <- function(
-    to.write,
-    binary_start,
-    CompressedSNPBlocks
-) {
-    seek(to.write, where = binary_start)
-    ## write stuff here
-    return(NULL)
-}
-
