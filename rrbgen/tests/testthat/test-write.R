@@ -58,10 +58,12 @@ test_that("can write a bgen file with header and sample names", {
 
 test_that("can write a bgen file with header, sample names and SNP information", {
 
-    ## library("testthat"); setwd("~/Dropbox/rrbgen/rrbgen/R/"); source("read-functions.R") ;source("write-functions.R"); source("test-drivers.R")
+    ##
+    library("testthat"); setwd("~/Dropbox/rrbgen/rrbgen/R/"); source("read-functions.R") ;source("write-functions.R"); source("test-drivers.R")
     
     sample_names <- c("samp1", "jimmy445", "samp3")
     var_info <- make_fake_var_info(12)
+    CompressedSNPBlocks <- 1 ## compressed
     
     bgen_file <- tempfile()
 
@@ -91,7 +93,7 @@ test_that("can write a full bgen file", {
 
     skip("wer")
     
-    ## library("testthat"); setwd("~/Dropbox/rrbgen/rrbgen/R/"); source("read-functions.R") ;source("write-functions.R"); source("test-drivers.R")
+   library("testthat"); setwd("~/Dropbox/rrbgen/rrbgen/R/"); source("read-functions.R") ;source("write-functions.R"); source("test-drivers.R")
     
     sample_names <- c("edgar", "gsp", "silva", "lesnar")
     var_info <- make_fake_var_info(8)
@@ -111,6 +113,16 @@ test_that("can write a full bgen file", {
             var_info = var_info,
             gp = gp
         )
+
+        out <- rrbgen_load(bgen_file)
+        gp <- out$gp
+
+        ## OK THIS RUNS
+        ## NOW CHECK
+        ## I AM NOT 100% SURE IF THERE IS AN OFF-BY-1 error in the offsets
+        ## for the genotype in THIS BIT OF CODE
+        ## Genotype block (Layout 2) (Minus C and D)
+        
 
         ## CHECK!
     ## }

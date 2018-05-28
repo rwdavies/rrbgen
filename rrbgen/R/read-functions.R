@@ -175,8 +175,11 @@ load_variant_identifying_data_for_all_snps <- function(to.read, offset, Layout, 
         if (i_var < M) {
             per_var_offset[i_var + 1] <- per_var_offset[i_var] + out$L_vid
             if (CompressedSNPBlocks == 1) {
-                per_var_offset[i_var + 1] <- per_var_offset[i_var + 1] + out$C - 4
+                ## compression, have stored D
+                per_var_offset[i_var + 1] <- per_var_offset[i_var + 1] + (out$C - 4)
             } else if (CompressedSNPBlocks == 0) {
+                ## so D is not stored on it's own
+                ## so D=C and out$C is the same as out$D
                 per_var_offset[i_var + 1] <- per_var_offset[i_var + 1] + out$C
             }
         }
@@ -247,13 +250,15 @@ load_variant_identifying_data_for_one_snp <- function(to.read, binary_start, Lay
     if (Layout == 2) {    
         if (CompressedSNPBlocks > 0) {
             D <- readBin(to.read, size = 4, "integer", n = 1, endian = "little") ## length after de-compression
-            L_vid <- L_vid + 4
+            ## L_vid <- L_vid + 4 ## D is added but not C?
         } else {
             D <- C
         }
     }
-    ## get the total number of bytes this used. note this now includes C and D
-    L_vid <- L_vid + 16 + 4 * num_K_alleles + L_id + L_rsid + L_chr + sum(L_ai)
+    ## get the total number of bytes this used
+    ## note this DOES include C which MUST be present
+    ## it does NOT include D
+    L_vid <- L_vid + 16 + 4 * num_K_alleles + L_id + L_rsid + L_chr + sum(L_ai) + 4
     ## I think this is an error - this is captured above
     ## if (Layout == 1) {
     ##     L_vid <- L_vid + 4
