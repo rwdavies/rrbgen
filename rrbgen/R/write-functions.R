@@ -36,7 +36,7 @@ rrbgen_write <- function(
         ## take gps or gp raw, make per_var_C, per_var_D
         out <- prepare_genotypes_for_all_snps(
             gp = gp,
-            gp_raw = NULL,
+            gp_raw = gp_raw,
             M = M,
             N = N,
             CompressedSNPBlocks = CompressedSNPBlocks,
@@ -467,7 +467,7 @@ prepare_genotypes_for_one_snp <- function(
     data[4 + 2 + 1 + 1 + N + 1 + 1] <- writeBin(as.integer(B_bit_prob), v, size = 1, endian = "little")
     ## now, work on genotype probabilities
     B_bit_prob_divide_8 <- (B_bit_prob / 8)
-    const_2_bit <- (2 ** B_bit_prob)
+    const_2_bit <- (2 ** B_bit_prob - 1)
     const_where <- list(
         1:8,
         9:16,
@@ -481,13 +481,15 @@ prepare_genotypes_for_one_snp <- function(
         ## hom_ref then alt
         for(i_gen in 1:2) {
             x_hom_ref <- round(gp[i_snp, i_sample, c("hom_ref", "het")[i_gen]] * const_2_bit)
-            x_bits <- intToBits(x_hom_ref)
-            for(i_B in 1:(B_bit_prob / 8)) {
+            x_bits <- robbie_intTobits(x_hom_ref, B_bit_prob) 
+            ## x_bits <- intToBits(x_hom_ref)
+            ## argh, 
+            for(i_B in 1:(B_bit_prob_divide_8)) {
                 ## (2 * B_bit_prob_divide_8) * (i_sample - 1) + 2 * (i_B - 1) + i_gen
-                data[last_byte_used + 1:B_bit_prob_divide_8] <-
+                data[last_byte_used + i_B] <-
                     packBits(x_bits[const_where[[i_B]]], type = "raw")
-                last_byte_used <- last_byte_used + B_bit_prob_divide_8
             }
+            last_byte_used <- last_byte_used + B_bit_prob_divide_8            
         }
     }
     ## 
@@ -507,3 +509,40 @@ prepare_genotypes_for_one_snp <- function(
         )
     )
 }
+
+## want unsigned integer
+## so B_bit_prob = 8, can do 0 through 
+robbie_intTobits <- function(x, B_bit_prob) {
+    if (is.na(x)) {
+        return(vector("raw", B_bit_prob))
+    }
+    if (B_bit_prob == 32) {
+        ## 2 ** 32 - 1
+        if (x >= (2147483647)) {
+            to_out <- intToBits(x - 2 ** 31)
+            to_out[32] <- as.raw(1)
+            return(to_out)
+        } else {
+            return(intToBits(x))
+        }
+    } else {
+        return(intToBits(x))
+    }
+}
+
+## if I ever want to do this cleaner...
+## 
+##    if (class(x) != "integer") {
+##        stop("x must be an integer")
+##    }
+##    if (x < 0 | x > 2 ** B_bit_prob) {
+##        stop("x out of range")
+##    }
+##    out <- vector(mode = "raw", B_bit_prob)
+##    if (x == 0) {
+##        return(out)
+##    }
+##    for(iB in (B_bit_prob - 1):1) {
+##        2 ** iB## was here
+##    }
+## }

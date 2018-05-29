@@ -98,29 +98,30 @@ test_that("can write a full bgen file", {
     bgen_file <- tempfile()
 
     CompressedSNPBlocks <- 1
-    
-    rrbgen_write(
-        bgen_file,
-        sample_names = sample_names,
-        var_info = var_info,
-        gp = gp,
-        CompressedSNPBlocks = CompressedSNPBlocks,
-        B_bit_prob = 16
-    )
-    
-    out <- rrbgen_load(bgen_file)
-    loaded_gp <- out$gp
 
-    expect_equal(dimnames(gp)[[1]], dimnames(loaded_gp)[[1]])
-    expect_equal(dimnames(gp)[[2]], as.character(dimnames(loaded_gp)[[2]])) ## argh
-    expect_equal(dimnames(gp)[[3]], dimnames(loaded_gp)[[3]])
-
-    ## this isn't quite right. investigate
-    ## WRITE A TEST FOR 8, 16, 24, 32 BITS
-    tolerance <- 1e-4
-    print(range(gp - loaded_gp, na.rm = TRUE))    
-    sum(abs(gp - loaded_gp) > tolerance, na.rm = TRUE)
-
-    expect_equal(as.logical(is.na(gp) ), as.logical(is.na(loaded_gp)))
+    for(B_bit_prob in c(8, 16, 24, 32)) {    
     
+        rrbgen_write(
+            bgen_file,
+            sample_names = sample_names,
+            var_info = var_info,
+            gp = gp,
+            CompressedSNPBlocks = CompressedSNPBlocks,
+            B_bit_prob = B_bit_prob
+        )
+        
+        out <- rrbgen_load(bgen_file)
+        loaded_gp <- out$gp
+        
+        expect_equal(dimnames(gp)[[1]], dimnames(loaded_gp)[[1]])
+        expect_equal(dimnames(gp)[[2]], as.character(dimnames(loaded_gp)[[2]])) ## argh
+        expect_equal(dimnames(gp)[[3]], dimnames(loaded_gp)[[3]])
+        tolerance <- acceptable_tolerance(B_bit_prob) 
+
+        expect_equal(sum(abs(gp - loaded_gp) > tolerance, na.rm = TRUE), 0)
+        
+        expect_equal(as.logical(is.na(gp) ), as.logical(is.na(loaded_gp)))
+
+    }
+        
 })

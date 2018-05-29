@@ -3,7 +3,11 @@
 ## need to go back 3 directories
 ## library('testthat'); setwd("~/Dropbox/rrbgen/rrbgen/tests/testthat")
 external_bgen_dir <- "../../../external/bgen/"
-external_bgen_file <- file.path(external_bgen_dir, "example.16bits.bgen")
+bits <- c(8, 16, 24, 32)
+external_bgen_files <- sapply(bits, function(bit) {
+    file.path(external_bgen_dir, paste0("example.", bit, "bits.bgen"))
+})
+names(external_bgen_files) <- as.character(bits)
 gen_file <- file.path(external_bgen_dir, "example.gen")    
 sample_file <- file.path(external_bgen_dir, "example.sample")
 gen <- read.table(gen_file)
@@ -16,7 +20,7 @@ test_that("can test things", {
 
     ##
     ## library("testthat"); setwd("~/Dropbox/rrbgen/rrbgen/R/"); source("read-functions.R") ;source("write-functions.R"); source("test-drivers.R");  setwd("~/Dropbox/rrbgen/rrbgen/tests/testthat")    ;      close(to.read)
-    to.read <- file(external_bgen_file, "rb")
+    to.read <- file(external_bgen_files["16"], "rb")
 
     ## header block
     bgen_header <- load_bgen_header(to.read)
@@ -79,7 +83,7 @@ test_that("can test things", {
 
 test_that("can load sample names", {
     
-    sample_names <- rrbgen_load_samples(external_bgen_file)
+    sample_names <- rrbgen_load_samples(external_bgen_files["16"])
     expect_equal(
         (sample_ids_from_sample_file),
         as.character(sample_names)
@@ -89,7 +93,7 @@ test_that("can load sample names", {
 
 test_that("can load SNPs", {
 
-    var_info <- rrbgen_load_variant_info(external_bgen_file)
+    var_info <- rrbgen_load_variant_info(external_bgen_files["16"])
 
     expect_equal(as.integer(var_info[, 1]), gen[, 1])
     for(i in 2:6) {
@@ -100,20 +104,24 @@ test_that("can load SNPs", {
 
 test_that("can load everything", {
 
-    out <- rrbgen_load(external_bgen_file)
-    gp <- out$gp
+    for(B_bit_prob in c(8, 16, 24, 32)) {
 
-    ## check all genotypes below
-    tolerance <- 1e-4
-    gen1 <- gen[, 6 + seq(1, ncol(gen) - 6, 3)]
-    gen2 <- gen[, 6 + seq(2, ncol(gen) - 6, 3)]
-    gen3 <- gen[, 6 + seq(3, ncol(gen) - 6, 3)]
+        out <- rrbgen_load(external_bgen_files[as.character(B_bit_prob)])
+        gp <- out$gp
 
-    expect_equal(max(abs(gen1 - gp[, , 1]), na.rm = TRUE) < tolerance, TRUE)
-    expect_equal(max(abs(gen2 - gp[, , 2]), na.rm = TRUE) < tolerance, TRUE)
-    expect_equal(max(abs(gen3 - gp[, , 3]), na.rm = TRUE) < tolerance, TRUE)
+        tolerance <- acceptable_tolerance(B_bit_prob)         
 
-    ## check missing
-    expect_equal(is.na(gp[, , 1]), (gen1 == 0) & (gen2 == 0) & (gen3 == 0), check.attributes = FALSE)
+        gen1 <- gen[, 6 + seq(1, ncol(gen) - 6, 3)]
+        gen2 <- gen[, 6 + seq(2, ncol(gen) - 6, 3)]
+        gen3 <- gen[, 6 + seq(3, ncol(gen) - 6, 3)]
+
+        expect_equal(max(abs(gen1 - gp[, , 1]), na.rm = TRUE) < tolerance, TRUE)
+        expect_equal(max(abs(gen2 - gp[, , 2]), na.rm = TRUE) < tolerance, TRUE)
+        expect_equal(max(abs(gen3 - gp[, , 3]), na.rm = TRUE) < tolerance, TRUE)
+        
+        ## check missing
+        expect_equal(is.na(gp[, , 1]), (gen1 == 0) & (gen2 == 0) & (gen3 == 0), check.attributes = FALSE)
+
+    }
 
 })

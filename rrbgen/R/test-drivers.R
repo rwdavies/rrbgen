@@ -30,3 +30,12 @@ make_fake_gp <- function(sample_names, var_ids, random_fraction = 0.05) {
     ##
     return(gp)
 }
+
+
+acceptable_tolerance <- function(B_bit_prob) {
+    ## tolerance not quite working here for higher values
+    ## my assumption of gen being "written" to bgen might not be right
+    tolerance <- 1 / (2 ** B_bit_prob - 1) / 2 ## I think this is right
+    tolerance <- as.numeric(c("8" = tolerance * 2, "16" = tolerance * 8, "24" = 5e-5, "32" = 5e-5)[as.character(B_bit_prob)])
+    return(tolerance)
+}

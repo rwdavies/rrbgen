@@ -50,6 +50,7 @@ rrbgen_load <- function(
     dimnames(gp)[[1]] <- snp_info[, gp_names_col]
     dimnames(gp)[[2]] <- sample_names
     dimnames(gp)[[3]] <- c("hom_ref", "het", "hom_alt")
+    close(to.read)
     return(
         list(
             gp = gp,
@@ -341,10 +342,10 @@ load_genotypes_for_one_snp <- function(to.read, binary_start, num_K_alleles, N, 
                 ## dosage[iSample] <- NA
                 gen_probs[iSample, 1:3] <- NA
             } else {
-                x <- sum(as.integer(rawToBits(b_hom_ref)) * (2 ** (0:(B_bit_prob - 1)))    )
-                p_hom_ref <- x / (2 ** B_bit_prob)
-                x <- sum(as.integer(rawToBits(b_het)) * (2 ** (0:(B_bit_prob - 1)))    )
-                p_het <- x / (2 ** B_bit_prob)
+                x <- sum(as.integer(rawToBits(b_hom_ref)[1:B_bit_prob]) * (2 ** (0:(B_bit_prob - 1)))    )
+                p_hom_ref <- x / (2 ** B_bit_prob - 1)
+                x <- sum(as.integer(rawToBits(b_het)[1:B_bit_prob]) * (2 ** (0:(B_bit_prob - 1)))    )
+                p_het <- x / (2 ** B_bit_prob - 1)
                 p_hom_alt <- 1 - p_hom_ref - p_het
                 ## dosage[iSample] <- p_het * 2 * p_hom_alt
                 gen_probs[iSample, 1:3] <- c(p_hom_ref, p_het, p_hom_alt)
