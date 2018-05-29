@@ -9,5 +9,5 @@ user:        Gavin Band <gavin.band@well.ox.ac.uk>
 date:        Wed May 16 09:02:55 2018 +0000
 summary:     README.md edited online with Bitbucket
 
-
+Added example.24bits.bgen and example.32bits.bgen on May 29, 2018
 
