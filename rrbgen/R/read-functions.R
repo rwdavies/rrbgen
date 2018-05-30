@@ -340,29 +340,20 @@ load_genotypes_for_one_snp <- function(to.read, binary_start, num_K_alleles, N, 
         ##
         ## remaining_bytes <- D - 4 - 2 - 1 - 1 - N - 1 - 1
         ## dosage <- array(NA, N)
-        gen_probs <- array(NA, c(N, 3))
         if ((B_bit_prob %in% c(8, 16, 24, 32)) == FALSE) {
             stop("non multiple of 8 B_bit_prob not supported")
         }
         if (sum(ploidy[1:N] != 2)) {
             stop("this code does not support non-2 ploidy")
         }
-        for(iSample in 1:N) {
-            b_hom_ref <- readBin(dataC, size = 1, "raw", n = B_bit_prob / 8, endian = "little")
-            b_het <- readBin(dataC, size = 1, "raw", n = B_bit_prob / 8, endian = "little")        
-            if (is_missing[iSample]) {
-                ## dosage[iSample] <- NA
-                gen_probs[iSample, 1:3] <- NA
-            } else {
-                x <- sum(as.integer(rawToBits(b_hom_ref)[1:B_bit_prob]) * (2 ** (0:(B_bit_prob - 1)))    )
-                p_hom_ref <- x / (2 ** B_bit_prob - 1)
-                x <- sum(as.integer(rawToBits(b_het)[1:B_bit_prob]) * (2 ** (0:(B_bit_prob - 1)))    )
-                p_het <- x / (2 ** B_bit_prob - 1)
-                p_hom_alt <- 1 - p_hom_ref - p_het
-                ## dosage[iSample] <- p_het * 2 * p_hom_alt
-                gen_probs[iSample, 1:3] <- c(p_hom_ref, p_het, p_hom_alt)
-            }
-        }
+        data_raw_for_probs <- readBin(dataC, size = 1, "raw", n = 2 * N * (B_bit_prob / 8), endian = "little")
+        gen_probs <- convert_raw_probabilities_to_double_probabilities(
+            data_raw_for_probs,
+            N,
+            B_bit_prob,
+            is_missing
+        )
+        
     }
     close(dataC)
     rm(data)
@@ -371,4 +362,34 @@ load_genotypes_for_one_snp <- function(to.read, binary_start, num_K_alleles, N, 
             gen_probs = gen_probs
         )
     )
+}
+
+convert_raw_probabilities_to_double_probabilities <- function(
+    data_raw_for_probs,
+    N,
+    B_bit_prob,
+    is_missing
+) {
+    gen_probs <- array(NA, c(N, 3))    
+    B_bit_prob_divide_8 <- B_bit_prob / 8
+    w <- 1:B_bit_prob_divide_8
+    last_byte_used <- 0
+    for(iSample in 1:N) {
+        b_hom_ref <- data_raw_for_probs[last_byte_used + w]
+        b_het <- data_raw_for_probs[last_byte_used + w + B_bit_prob_divide_8]
+        last_byte_used <- last_byte_used + B_bit_prob_divide_8 * 2
+        if (is_missing[iSample]) {
+            ## dosage[iSample] <- NA
+            gen_probs[iSample, 1:3] <- NA
+        } else {
+            x <- sum(as.integer(rawToBits(b_hom_ref)[1:B_bit_prob]) * (2 ** (0:(B_bit_prob - 1)))    )
+            p_hom_ref <- x / (2 ** B_bit_prob - 1)
+            x <- sum(as.integer(rawToBits(b_het)[1:B_bit_prob]) * (2 ** (0:(B_bit_prob - 1)))    )
+            p_het <- x / (2 ** B_bit_prob - 1)
+            p_hom_alt <- 1 - p_hom_ref - p_het
+            ## dosage[iSample] <- p_het * 2 * p_hom_alt
+            gen_probs[iSample, 1:3] <- c(p_hom_ref, p_het, p_hom_alt)
+        }
+    }
+    return(gen_probs)
 }
