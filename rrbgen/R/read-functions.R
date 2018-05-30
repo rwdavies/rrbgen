@@ -344,7 +344,7 @@ load_genotypes_for_one_snp <- function(to.read, binary_start, num_K_alleles, N, 
         if ((B_bit_prob %in% c(8, 16, 24, 32)) == FALSE) {
             stop("non multiple of 8 B_bit_prob not supported")
         }
-        if (sum(ploidy[iSample] != 2)) {
+        if (sum(ploidy[1:N] != 2)) {
             stop("this code does not support non-2 ploidy")
         }
         for(iSample in 1:N) {
