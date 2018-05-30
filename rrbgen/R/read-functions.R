@@ -24,7 +24,7 @@ rrbgen_load <- function(
     sample_names <- out$sample_names
     ## snp info
     out <- load_variant_identifying_data_for_all_snps(to.read, offset, Layout, M, CompressedSNPBlocks)
-    snp_info <- out$snp_info
+    var_info <- out$var_info
     per_var_offset <- out$per_var_offset
     per_var_C <- out$per_var_C
     per_var_L_vid <- out$per_var_L_vid
@@ -47,14 +47,15 @@ rrbgen_load <- function(
         gp[i_var, , ] <- out$gen_probs
     }
     ## add names
-    dimnames(gp)[[1]] <- snp_info[, gp_names_col]
+    dimnames(gp)[[1]] <- var_info[, gp_names_col]
     dimnames(gp)[[2]] <- sample_names
     dimnames(gp)[[3]] <- c("hom_ref", "het", "hom_alt")
     close(to.read)
     return(
         list(
             gp = gp,
-            sample_names = sample_names
+            sample_names = sample_names,
+            var_info = var_info
         )
     )
 }
@@ -93,7 +94,7 @@ rrbgen_load_variant_info <- function(
     ## load all variants
     out <- load_variant_identifying_data_for_all_snps(to.read, offset, Layout, M, CompressedSNPBlocks)
     close(to.read)
-    return(out$snp_info)
+    return(out$var_info)
 }
 
 
@@ -174,8 +175,8 @@ load_variant_identifying_data_for_all_snps <- function(to.read, offset, Layout, 
     per_var_L_gdb <- array(NA, M)
     per_var_num_K_alleles <- array(NA, M)
     ## 
-    snp_info <- array(NA, c(M, 6))
-    colnames(snp_info) <- c("chr", "snpid", "rsid", "position", "ref", "alt")
+    var_info <- array(NA, c(M, 6))
+    colnames(var_info) <- c("chr", "snpid", "rsid", "position", "ref", "alt")
     ##
     for(i_var in 1:M) {
         out <- load_variant_identifying_data_for_one_snp(to.read, per_var_offset[i_var], Layout, CompressedSNPBlocks)
@@ -186,11 +187,11 @@ load_variant_identifying_data_for_all_snps <- function(to.read, offset, Layout, 
         if (i_var < M) {
             per_var_offset[i_var + 1] <- per_var_offset[i_var] + out$L_vid + out$L_gdb
         }
-        snp_info[i_var, ] <- out$variant_info
+        var_info[i_var, ] <- out$variant_info
     }
     return(
         list(
-            snp_info = snp_info,
+            var_info = var_info,
             per_var_offset = per_var_offset,
             per_var_C = per_var_C,
             per_var_L_vid = per_var_L_vid,

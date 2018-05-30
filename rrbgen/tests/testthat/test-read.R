@@ -1,7 +1,7 @@
 ## tests using external data from bgen library
 ## note - these are run in rrbgen/rrbgen/tests/testthat
 ## need to go back 3 directories
-## library('testthat'); setwd("~/Dropbox/rrbgen/rrbgen/tests/testthat")
+## library("testthat"); setwd("~/Dropbox/rrbgen/rrbgen/R/"); source("read-functions.R") ;source("write-functions.R"); source("test-drivers.R");   library('testthat'); setwd("~/Dropbox/rrbgen/rrbgen/tests/testthat")
 external_bgen_dir <- "../../../external/bgen/"
 bits <- c(8, 16, 24, 32)
 external_bgen_files <- sapply(bits, function(bit) {
@@ -123,5 +123,32 @@ test_that("can load everything", {
         expect_equal(is.na(gp[, , 1]), (gen1 == 0) & (gen2 == 0) & (gen3 == 0), check.attributes = FALSE)
 
     }
+
+})
+
+
+test_that("can read, write then re-read a file", {
+
+    B_bit_prob <- 16
+    out <- rrbgen_load(external_bgen_files[as.character(B_bit_prob)])
+    gp <- out$gp
+    sample_names <- out$sample_names
+    var_info <- out$var_info
+    CompressedSNPBlocks <- 1
+
+    bgen_file <- tempfile()
+    rrbgen_write(
+        bgen_file,
+        sample_names = sample_names,
+        var_info = var_info,
+        gp = gp,
+        CompressedSNPBlocks = CompressedSNPBlocks,
+        B_bit_prob = B_bit_prob
+    )
+
+    out2 <- rrbgen_load(bgen_file)
+    expect_equal(out2$sample_names, out$sample_names)
+    expect_equal(out2$var_info, out$var_info)
+    expect_equal(out2$gp, out$gp)    ## hmm, exactly the same? good, yes?
 
 })

@@ -125,3 +125,4 @@ test_that("can write a full bgen file", {
     }
         
 })
+
