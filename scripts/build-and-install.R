@@ -10,37 +10,41 @@ for(key in c("--file=", "--f=")) {
     }
 }
 
-## specify package
+message("specify package")
 pkg <- "rrbgen"
 dir.create("releases", showWarnings = FALSE)
 
-## documentation
+message("documentation")
 devtools::document(pkg = pkg)
 
-## make the tarball
+message("make the tarball")
 package_tarball <- devtools::build(pkg = pkg, manual = TRUE)
 version <- unlist(
     strsplit(unlist(strsplit(basename(package_tarball), "rrbgen_")), ".tar.gz")
 )
 
-## move tarball to releases
+message("move tarball to releases")
 release_package_tarball <- file.path("releases", paste0("rrbgen_", version, ".tar.gz"))
 system(paste0("mv '", package_tarball, "' ", release_package_tarball))
 package_tarball <- release_package_tarball
 
-## install from tarball
+message("install from tarball")
 result <- tryCatch({
     install.packages(package_tarball)
 }, warning = function(w) {
     stop(paste0(pkg, " installation failed"))
 }, error = function(e) {
-    stop(paste0(pkg, " installation failed"))
+   stop(paste0(pkg, " installation failed"))
 })
 
-## build PDF
+message("build PDF")
 pdf_name <- file.path("releases", paste0("rrbgen_", version, ".pdf"))
-args = c(
+args <- c(
     "CMD", "Rd2pdf", pkg, "--batch", "--force", "--no-preview",
     paste0("--output=", pdf_name)
 )
-system2("R", args)
+out <- system2("R", args)
+if (out > 0) {
+    stop("failed to build PDF")
+}
+

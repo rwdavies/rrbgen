@@ -1,3 +1,15 @@
+#' @title Write variant information to a bgen file
+#' @param bgen_file Path to bgen file
+#' @param sample_names sample_names character vector
+#' @param var_info var_info (6 first columns of gen file)
+#' @param gp genotype probabilities (see examples)
+#' @param gp_raw not yet supported
+#' @param free free text for header 
+#' @param Layout Only supported 2 (see bgen spec)
+#' @param CompressedSNPBlocks Whether to (1) or not to (0) compress genotype probabilities
+#' @param B_bit_prob How many bits to use to encode genotype probabilities (only supported 8, 16, 24, 32)
+#' @author Robert Davies
+#' @export
 rrbgen_write <- function(
     bgen_file,
     sample_names = NULL,

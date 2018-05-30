@@ -1,6 +1,9 @@
-## here is the general purpose API
-## later, instruct only loading certain samples or snps
-## have separate samples and SNPs below
+#' @title Load bgen file
+#' @param bgen_file Path to bgen file to load
+#' @param gp_names_col Which column to use to label the variants in the first dimension of the genotype probabilities
+#' @return gp, sample_names and var_info
+#' @author Robert Davies
+#' @export
 rrbgen_load <- function(
     bgen_file,
     gp_names_col = "snpid"
@@ -61,7 +64,11 @@ rrbgen_load <- function(
 }
 
 
-## just load the sample names
+#' @title Load samples from a bgen file
+#' @param bgen_file Path to bgen file to load
+#' @return sample_names
+#' @author Robert Davies
+#' @export
 rrbgen_load_samples <- function(
     bgen_file
 ) {
@@ -80,7 +87,11 @@ rrbgen_load_samples <- function(
 }
 
 
-## just load the variant information
+#' @title Load variant information from a bgen file
+#' @param bgen_file Path to bgen file to load
+#' @return var_info
+#' @author Robert Davies
+#' @export
 rrbgen_load_variant_info <- function(
     bgen_file
 ) {
@@ -331,12 +342,12 @@ load_genotypes_for_one_snp <- function(to.read, binary_start, num_K_alleles, N, 
         ## dosage <- array(NA, N)
         gen_probs <- array(NA, c(N, 3))
         if ((B_bit_prob %in% c(8, 16, 24, 32)) == FALSE) {
-        stop("non multiple of 8 B_bit_prob not supported")
+            stop("non multiple of 8 B_bit_prob not supported")
+        }
+        if (sum(ploidy[iSample] != 2)) {
+            stop("this code does not support non-2 ploidy")
         }
         for(iSample in 1:N) {
-            if (ploidy[iSample] != 2) {
-                stop("this code does not support non-2 ploidy")
-            }
             b_hom_ref <- readBin(dataC, size = 1, "raw", n = B_bit_prob / 8, endian = "little")
             b_het <- readBin(dataC, size = 1, "raw", n = B_bit_prob / 8, endian = "little")        
             if (is_missing[iSample]) {
