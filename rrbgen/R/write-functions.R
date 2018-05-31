@@ -464,6 +464,7 @@ prepare_genotypes_for_one_snp <- function(
     local_offset <- 4 + 2 + 1 + 1
     ##
     missing <- is.na(gp[i_snp, , 1])
+    ##
     data[local_offset + 1:N] <- make_ploidy_raw(missing)
     ## finally, last 2 things
     phased_flag <- 0
@@ -495,20 +496,29 @@ prepare_genotypes_for_one_snp <- function(
 
 make_ploidy_raw <- function(missing) {
     N <- length(missing)
-    data_local <- vector("raw", N * 8)
-    default_ploidy <- rawToBits(as.raw(as.integer(2))) ## assume everyone 2 for now
-    w <- 1:8
-    for(i_sample in 1:N) {
-        ## do not apply check
-        ploidy <- default_ploidy
-        if (missing[i_sample]) {
-            ploidy[8] <- as.raw(1)
-        }
-        ## last byte is missing
-        data_local[8 * (i_sample - 1) + w] <- ploidy
-    }
-    v <- vector(mode = "raw", N)        
-    return(writeBin(packBits(data_local), v, size = 1, endian = "little"))
+    ## there are only two values under current assumptions
+    ## make this naive but fast for now
+    not_missing_ploidy <- rawToBits(as.raw(as.integer(2))) ## assume everyone 2 for now
+    missing_ploidy <- not_missing_ploidy
+    missing_ploidy[8] <- as.raw(1)
+    not_missing_ploidy <- packBits(not_missing_ploidy)    
+    missing_ploidy <- packBits(missing_ploidy)
+    data_local <- vector("raw", N)
+    data_local[missing == TRUE] <- missing_ploidy
+    data_local[missing == FALSE] <- not_missing_ploidy
+    return(data_local)
+    ##w <- 1:8
+    ##for(i_sample in 1:N) {
+    ##    ## do not apply check
+    ##    ploidy <- default_ploidy
+    ##    if (missing[i_sample]) {
+    ##        ploidy[8] <- as.raw(1)
+    ##    }
+    ##    ## last byte is missing
+    ##    data_local[8 * (i_sample - 1) + w] <- ploidy
+    ## }
+    ## v <- vector(mode = "raw", N)        
+    ##return(writeBin(packBits(data_local), v, size = 1, endian = "little"))
 }
 
 
