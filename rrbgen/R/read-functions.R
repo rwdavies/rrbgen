@@ -322,8 +322,15 @@ load_genotypes_for_one_snp <- function(to.read, binary_start, num_K_alleles, N, 
     p_max <- readBin(dataC, size = 1, "integer", n = 1, endian = "little")
     N_bytes <- readBin(dataC, size = 1, "raw", n = N, endian = "little")
     ## last bit is missingness
-    is_missing <- as.logical(sapply(N_bytes, function(byte) rawToBits(byte)[8]))
-    ploidy <- sapply(N_bytes, function(byte) sum(2 ** (0:6) * as.integer(rawToBits(byte)[1:7])))
+    is_missing <- array(FALSE, N)
+    ploidy <- array(NA, N)
+    m <- 2 ** (0:6)
+    w <- 1:7
+    for(i_sample in 1:N) {
+        bits <- rawToBits(N_bytes[i_sample])
+        is_missing[i_sample] <- as.logical(bits[8])
+        ploidy[i_sample] <- sum(m * as.integer(bits[w]))
+    }
     ##
     phased_flag <- as.integer(readBin(dataC, size = 1, "raw", n = 1, endian = "little"))
     if ((phased_flag != 1) & (phased_flag != 0)) {
