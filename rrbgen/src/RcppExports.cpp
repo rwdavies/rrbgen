@@ -17,14 +17,28 @@ BEGIN_RCPP
 END_RCPP
 }
 // rcpp_make_raw_data_vector_for_probabilities
-Rcpp::RawVector rcpp_make_raw_data_vector_for_probabilities(Rcpp::NumericMatrix gp_sub, int B_bit_prob);
+Rcpp::RawVector rcpp_make_raw_data_vector_for_probabilities(Rcpp::NumericMatrix& gp_sub, int B_bit_prob);
 RcppExport SEXP _rrbgen_rcpp_make_raw_data_vector_for_probabilities(SEXP gp_subSEXP, SEXP B_bit_probSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< Rcpp::NumericMatrix >::type gp_sub(gp_subSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericMatrix& >::type gp_sub(gp_subSEXP);
     Rcpp::traits::input_parameter< int >::type B_bit_prob(B_bit_probSEXP);
     rcpp_result_gen = Rcpp::wrap(rcpp_make_raw_data_vector_for_probabilities(gp_sub, B_bit_prob));
+    return rcpp_result_gen;
+END_RCPP
+}
+// rcpp_convert_raw_probabilities_to_double_probabilities
+Rcpp::NumericMatrix rcpp_convert_raw_probabilities_to_double_probabilities(const Rcpp::RawVector& data_raw_for_probs, int N, int B_bit_prob, Rcpp::LogicalVector& is_missing);
+RcppExport SEXP _rrbgen_rcpp_convert_raw_probabilities_to_double_probabilities(SEXP data_raw_for_probsSEXP, SEXP NSEXP, SEXP B_bit_probSEXP, SEXP is_missingSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Rcpp::RawVector& >::type data_raw_for_probs(data_raw_for_probsSEXP);
+    Rcpp::traits::input_parameter< int >::type N(NSEXP);
+    Rcpp::traits::input_parameter< int >::type B_bit_prob(B_bit_probSEXP);
+    Rcpp::traits::input_parameter< Rcpp::LogicalVector& >::type is_missing(is_missingSEXP);
+    rcpp_result_gen = Rcpp::wrap(rcpp_convert_raw_probabilities_to_double_probabilities(data_raw_for_probs, N, B_bit_prob, is_missing));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -32,6 +46,7 @@ END_RCPP
 static const R_CallMethodDef CallEntries[] = {
     {"_rrbgen_rcpp_return_same_int", (DL_FUNC) &_rrbgen_rcpp_return_same_int, 1},
     {"_rrbgen_rcpp_make_raw_data_vector_for_probabilities", (DL_FUNC) &_rrbgen_rcpp_make_raw_data_vector_for_probabilities, 2},
+    {"_rrbgen_rcpp_convert_raw_probabilities_to_double_probabilities", (DL_FUNC) &_rrbgen_rcpp_convert_raw_probabilities_to_double_probabilities, 4},
     {NULL, NULL, 0}
 };
 

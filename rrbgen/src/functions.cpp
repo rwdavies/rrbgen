@@ -30,7 +30,7 @@ unsigned short get_nybble( std::uint32_t number, const unsigned short part )
 
 //' @export
 // [[Rcpp::export]]
-Rcpp::RawVector rcpp_make_raw_data_vector_for_probabilities(Rcpp::NumericMatrix gp_sub, int B_bit_prob = 16)
+Rcpp::RawVector rcpp_make_raw_data_vector_for_probabilities(Rcpp::NumericMatrix& gp_sub, int B_bit_prob = 16)
 {
   int N = gp_sub.nrow();
   int B_bit_prob_divide_8 = (B_bit_prob / 8);
@@ -99,3 +99,57 @@ Rcpp::RawVector rcpp_make_raw_data_vector_for_probabilities(Rcpp::NumericMatrix 
   }
   return(output);
 }
+
+
+
+// see http://www.cplusplus.com/forum/general/45432/
+
+
+//' @export
+// [[Rcpp::export]]
+Rcpp::NumericMatrix rcpp_convert_raw_probabilities_to_double_probabilities(const Rcpp::RawVector& data_raw_for_probs, int N, int B_bit_prob, Rcpp::LogicalVector& is_missing) {
+  Rcpp::NumericMatrix gen_probs(N, 3);
+  int B_bit_prob_divide_8 = B_bit_prob / 8;
+  char hom_ref_vals[] =  {0, 0, 0, 0}; //some char/byte array
+  char het_vals[] =  {0, 0, 0, 0}; //some char/byte array  
+  //std::uint32_t denom = pow(2, B_bit_prob) - 1;
+  double denomD = pow(2, B_bit_prob) - 1;  
+  std::uint32_t x_hom_ref, x_het;
+  int last_byte_used = 0;
+  int i_sample;
+  int i = 0;
+  double p_hom_ref, p_het, p_hom_alt;
+  for(i_sample = 0; i_sample < N; i_sample++) {
+    if (is_missing[i_sample] == false) {
+      for(i=0; i < B_bit_prob_divide_8; i++) {
+	hom_ref_vals[i]=data_raw_for_probs[last_byte_used + i];
+	het_vals[i]=data_raw_for_probs[last_byte_used + i + B_bit_prob_divide_8];
+      }
+      // 
+      std::uint32_t *plong_hom_ref = (std::uint32_t*) hom_ref_vals;
+      std::uint32_t *plong_het = (std::uint32_t*) het_vals;
+      x_hom_ref = plong_hom_ref[0];
+      p_hom_ref = x_hom_ref / denomD;
+      x_het = plong_het[0];
+      p_het = x_het / denomD;
+      p_hom_alt = 1 - p_hom_ref - p_het;
+      gen_probs(i_sample, 0) = p_hom_ref;
+      gen_probs(i_sample, 1) = p_het;
+      gen_probs(i_sample, 2) = p_hom_alt;    
+      //std::cout << "i_sample=" << i_sample << ",x_hom_ref=" << x_hom_ref << ",p_hom_ref=" << p_hom_ref << std::endl;
+      //std::cout << "i_sample=" << i_sample << ",x_het=" << x_het << ",p_het=" << p_het << std::endl;    
+      //std::cout << "hom_ref_vals:" << hom_ref_vals[0] << std::endl;
+    } else {
+      gen_probs(i_sample, 0) = NA_REAL;
+      gen_probs(i_sample, 1) = NA_REAL;
+      gen_probs(i_sample, 2) = NA_REAL;
+    }
+    last_byte_used = last_byte_used + B_bit_prob_divide_8 * 2;
+  }
+  return(gen_probs);
+}
+
+
+
+
+  

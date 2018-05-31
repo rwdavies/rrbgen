@@ -1,7 +1,7 @@
 ## tests using external data from bgen library
 ## note - these are run in rrbgen/rrbgen/tests/testthat
 ## need to go back 3 directories
-## library("testthat"); setwd("~/Dropbox/rrbgen/rrbgen/R/"); source("read-functions.R") ;source("write-functions.R"); source("test-drivers.R");   library('testthat'); setwd("~/Dropbox/rrbgen/rrbgen/tests/testthat")
+## library("testthat"); setwd("~/Dropbox/rrbgen/rrbgen/R/"); source("read-functions.R") ;source("write-functions.R"); source("test-drivers.R");   library('testthat'); setwd("~/Dropbox/rrbgen/rrbgen/tests/testthat"); library("rrbgen")
 external_bgen_dir <- "../../../external/bgen/"
 bits <- c(8, 16, 24, 32)
 external_bgen_files <- sapply(bits, function(bit) {

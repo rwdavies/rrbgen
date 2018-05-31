@@ -11,3 +11,8 @@ rcpp_make_raw_data_vector_for_probabilities <- function(gp_sub, B_bit_prob = 16L
     .Call('_rrbgen_rcpp_make_raw_data_vector_for_probabilities', PACKAGE = 'rrbgen', gp_sub, B_bit_prob)
 }
 
+#' @export
+rcpp_convert_raw_probabilities_to_double_probabilities <- function(data_raw_for_probs, N, B_bit_prob, is_missing) {
+    .Call('_rrbgen_rcpp_convert_raw_probabilities_to_double_probabilities', PACKAGE = 'rrbgen', data_raw_for_probs, N, B_bit_prob, is_missing)
+}
+

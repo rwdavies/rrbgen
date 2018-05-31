@@ -349,7 +349,7 @@ load_genotypes_for_one_snp <- function(to.read, binary_start, num_K_alleles, N, 
         ## ARGH this only works for 2
         ## data_raw_for_probs <- readBin(dataC, size = (B_bit_prob / 8), "integer", n = 2 * N, endian = "little", signed = FALSE)
         data_raw_for_probs <- readBin(dataC, size = 1, "raw", n = 2 * N * (B_bit_prob / 8), endian = "little", signed = FALSE)
-        gen_probs <- convert_raw_probabilities_to_double_probabilities(
+        gen_probs <- rcpp_convert_raw_probabilities_to_double_probabilities(
             data_raw_for_probs,
             N,
             B_bit_prob,
@@ -372,7 +372,7 @@ convert_raw_probabilities_to_double_probabilities <- function(
     B_bit_prob,
     is_missing
 ) {
-    gen_probs <- array(NA, c(N, 3))    
+    gen_probs <- array(NA, c(N, 3))
     B_bit_prob_divide_8 <- B_bit_prob / 8
     w_last <- 1:B_bit_prob_divide_8
     last_byte_used <- 0
