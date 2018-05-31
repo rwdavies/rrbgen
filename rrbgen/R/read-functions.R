@@ -322,15 +322,9 @@ load_genotypes_for_one_snp <- function(to.read, binary_start, num_K_alleles, N, 
     p_max <- readBin(dataC, size = 1, "integer", n = 1, endian = "little")
     N_bytes <- readBin(dataC, size = 1, "raw", n = N, endian = "little")
     ## last bit is missingness
-    is_missing <- array(FALSE, N)
-    ploidy <- array(NA, N)
-    m <- 2 ** (0:6)
-    w <- 1:7
-    for(i_sample in 1:N) {
-        bits <- rawToBits(N_bytes[i_sample])
-        is_missing[i_sample] <- as.logical(bits[8])
-        ploidy[i_sample] <- sum(m * as.integer(bits[w]))
-    }
+    out <- convert_ploidy_byte(N_bytes) 
+    is_missing <- out$is_missing
+    ploidy <- out$ploidy
     ##
     phased_flag <- as.integer(readBin(dataC, size = 1, "raw", n = 1, endian = "little"))
     if ((phased_flag != 1) & (phased_flag != 0)) {
@@ -372,6 +366,38 @@ load_genotypes_for_one_snp <- function(to.read, binary_start, num_K_alleles, N, 
         )
     )
 }
+
+
+
+convert_ploidy_byte <- function(N_bytes) {
+    N <- length(N_bytes)
+    is_missing <- array(NA, N)
+    ploidy <- array(NA, N)
+    ## raw 02 (as.raw(2))and raw 82 (as.raw(130)) are ploidy 2 not missing and yes missing, respectively
+    not_missing_ploidy_2 <- N_bytes == as.raw(2)
+    is_missing[not_missing_ploidy_2] <- FALSE
+    ploidy[not_missing_ploidy_2] <- 2
+    ## 
+    yes_missing_ploidy_2 <- N_bytes == as.raw(130)
+    is_missing[yes_missing_ploidy_2] <- TRUE
+    ploidy[yes_missing_ploidy_2] <- 2
+    if (sum(is.na(is_missing)) > 0) {
+        m <- 2 ** (0:6)
+        w <- 1:7
+        for(i_sample in which(is_missing)) {
+            bits <- rawToBits(N_bytes[i_sample])
+            is_missing[i_sample] <- as.logical(bits[8])
+            ploidy[i_sample] <- sum(m * as.integer(bits[w]))
+        }
+    }
+    return(
+        list(
+            is_missing = is_missing,
+            ploidy = ploidy
+        )
+    )
+}
+
 
 convert_raw_probabilities_to_double_probabilities <- function(
     data_raw_for_probs,
