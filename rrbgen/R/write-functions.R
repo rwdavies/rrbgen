@@ -478,7 +478,7 @@ prepare_genotypes_for_one_snp <- function(
     data[4 + 2 + 1 + 1 + N + 1] <- writeBin(as.integer(phased_flag), v, size = 1, endian = "little")
     data[4 + 2 + 1 + 1 + N + 1 + 1] <- writeBin(as.integer(B_bit_prob), v, size = 1, endian = "little")
     ## genotype probabilities
-    data[non_gp_stuff_length + 1:(2 * N * (B_bit_prob / 8))] <- make_raw_data_vector_for_probabilities(
+    data[non_gp_stuff_length + 1:(2 * N * (B_bit_prob / 8))] <- rcpp_make_raw_data_vector_for_probabilities(
         gp_sub = gp[i_snp, , ],
         B_bit_prob = B_bit_prob
     )
@@ -511,7 +511,7 @@ make_raw_data_vector_for_probabilities <- function(
     data_local <- vector(mode = "raw", length = N * (B_bit_prob / 8))
     ## constants
     B_bit_prob_divide_8 <- (B_bit_prob / 8)
-    const_2_bit <- (2 ** B_bit_prob - 1)
+    const_2_bit_minus_1 <- (2 ** B_bit_prob - 1)
     const_where <- list(
         1:8,
         9:16,
@@ -526,7 +526,7 @@ make_raw_data_vector_for_probabilities <- function(
         if (is.na(gp_sub[i_sample, 1]))  {
             v <- rep(0, 3)
         } else {
-            v <- gp_sub[i_sample, ] * (const_2_bit)
+            v <- gp_sub[i_sample, ] * (const_2_bit_minus_1)
             v2 <- v - floor(v)
             F <- as.integer(round(sum(v2)))
             if (F > 0) {
@@ -561,9 +561,9 @@ robbie_intTobits <- function(x, B_bit_prob) {
         return(vector("raw", B_bit_prob))
     }
     if (B_bit_prob == 32) {
-        ## 2 ** 32 - 1
-        if (x >= (2147483647)) {
-            to_out <- intToBits(x - 2 ** 31)
+        ## 2 ** 32 
+        if (x >= (2147483648)) {
+            to_out <- intToBits(x - 2147483648)
             to_out[32] <- as.raw(1)
             return(to_out)
         } else {

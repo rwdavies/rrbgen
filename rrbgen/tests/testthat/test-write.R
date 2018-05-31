@@ -87,7 +87,7 @@ test_that("can write a bgen file with header, sample names and SNP information",
 
 test_that("can write a full bgen file", {
 
-    ## library("testthat"); setwd("~/Dropbox/rrbgen/rrbgen/R/"); source("read-functions.R") ;source("write-functions.R"); source("test-drivers.R")
+    ## library("testthat"); setwd("~/Dropbox/rrbgen/rrbgen/R/"); source("read-functions.R") ;source("write-functions.R"); source("test-drivers.R"); library("rrbgen")
     sample_names <- c("edgar", "gsp", "silva", "lesnar")
     var_info <- make_fake_var_info(8)
     var_ids <- var_info[, "snpid"]
@@ -100,7 +100,10 @@ test_that("can write a full bgen file", {
     CompressedSNPBlocks <- 1
 
     for(B_bit_prob in c(8, 16, 24, 32)) {    
-    
+
+        ## OK AM HERE
+        ## TINY NUMBER OF LINGERING PROBLEMS
+        ## MUCH FASTER I THINK!
         rrbgen_write(
             bgen_file,
             sample_names = sample_names,
