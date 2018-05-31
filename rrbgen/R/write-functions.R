@@ -450,9 +450,9 @@ prepare_genotypes_for_one_snp <- function(
     num_K_alleles
 ) {
     ## make whole store here
+    v <- vector(mode = "raw")            
     non_gp_stuff_length <- 4 + 2 + 1 + 1 + N + 1 + 1
     data <- vector(mode = "raw", length = non_gp_stuff_length + 2 * N * (B_bit_prob / 8))
-    v <- vector(mode = "raw")
     ## do pre-genotype probability things
     data[1:4] <- writeBin(as.integer(N), v, size = 4, endian = "little")
     ## number_of_alleles
@@ -462,17 +462,9 @@ prepare_genotypes_for_one_snp <- function(
     data[8] <- writeBin(as.integer(2), v, size = 1, endian = "little") ## P_max
     ## missing and ploidy
     local_offset <- 4 + 2 + 1 + 1
-    default_ploidy <- rawToBits(as.raw(as.integer(2))) ## assume everyone 2 for now
-    ## 
-    for(i_sample in 1:N) {
-        ## do not apply check
-        x <- gp[i_snp, i_sample, ]
-        s <- sum(is.na(x))
-        ploidy <- default_ploidy
-        ploidy[8] <- as.raw(s)
-        ## last byte is missing
-        data[local_offset + i_sample] <- writeBin(packBits(ploidy), v, size = 1, endian = "little")
-    }
+    ##
+    missing <- is.na(gp[i_snp, , 1])
+    data[local_offset + 1:N] <- make_ploidy_raw(missing)
     ## finally, last 2 things
     phased_flag <- 0
     data[4 + 2 + 1 + 1 + N + 1] <- writeBin(as.integer(phased_flag), v, size = 1, endian = "little")
@@ -499,6 +491,26 @@ prepare_genotypes_for_one_snp <- function(
         )
     )
 }
+
+
+make_ploidy_raw <- function(missing) {
+    N <- length(missing)
+    data_local <- vector("raw", N * 8)
+    default_ploidy <- rawToBits(as.raw(as.integer(2))) ## assume everyone 2 for now
+    w <- 1:8
+    for(i_sample in 1:N) {
+        ## do not apply check
+        ploidy <- default_ploidy
+        if (missing[i_sample]) {
+            ploidy[8] <- as.raw(1)
+        }
+        ## last byte is missing
+        data_local[8 * (i_sample - 1) + w] <- ploidy
+    }
+    v <- vector(mode = "raw", N)        
+    return(writeBin(packBits(data_local), v, size = 1, endian = "little"))
+}
+
 
 
 ## prob_mat has rows = samples

@@ -26,8 +26,23 @@ message(date())
 external_bgen_dir <- "./external/bgen/"
 bit <- 16
 external_bgen_file <- file.path(external_bgen_dir, paste0("example.", bit, "bits.bgen"))
-for(i in 1:3)
-    out <- rrbgen_load(external_bgen_file)
+out <- rrbgen_load(external_bgen_file)
+message(date())
+## now write as well!
+gp <- out$gp
+sample_names <- out$sample_names
+var_info <- out$var_info
+CompressedSNPBlocks <- 1
+bgen_file <- tempfile()
+B_bit_prob <- 16
+rrbgen_write(
+    bgen_file,
+    sample_names = sample_names,
+    var_info = var_info,
+    gp = gp,
+    CompressedSNPBlocks = CompressedSNPBlocks,
+    B_bit_prob = B_bit_prob
+)
 message(date())
 ## end of what to profile
 
