@@ -451,7 +451,7 @@ prepare_genotypes_for_one_snp <- function(
 ) {
     ## make whole store here
     non_gp_stuff_length <- 4 + 2 + 1 + 1 + N + 1 + 1
-    data <- vector(mode = "raw", length = non_gp_stuff_length + N * (B_bit_prob / 8))
+    data <- vector(mode = "raw", length = non_gp_stuff_length + 2 * N * (B_bit_prob / 8))
     v <- vector(mode = "raw")
     ## do pre-genotype probability things
     data[1:4] <- writeBin(as.integer(N), v, size = 4, endian = "little")
@@ -477,33 +477,11 @@ prepare_genotypes_for_one_snp <- function(
     phased_flag <- 0
     data[4 + 2 + 1 + 1 + N + 1] <- writeBin(as.integer(phased_flag), v, size = 1, endian = "little")
     data[4 + 2 + 1 + 1 + N + 1 + 1] <- writeBin(as.integer(B_bit_prob), v, size = 1, endian = "little")
-    ## now, work on genotype probabilities
-    B_bit_prob_divide_8 <- (B_bit_prob / 8)
-    const_2_bit <- (2 ** B_bit_prob - 1)
-    const_where <- list(
-        1:8,
-        9:16,
-        17:24,
-        25:32
+    ## genotype probabilities
+    data[non_gp_stuff_length + 1:(2 * N * (B_bit_prob / 8))] <- make_raw_data_vector_for_probabilities(
+        gp_sub = gp[i_snp, , ],
+        B_bit_prob = B_bit_prob
     )
-    last_byte_used <- non_gp_stuff_length
-    ## be careful - no seek used below 
-    ## do not change for loops without checking format specifications
-    for(i_sample in 1:N) {
-        ## hom_ref then alt
-        for(i_gen in 1:2) {
-            x_hom_ref <- round(gp[i_snp, i_sample, c("hom_ref", "het")[i_gen]] * const_2_bit)
-            x_bits <- robbie_intTobits(x_hom_ref, B_bit_prob) 
-            ## x_bits <- intToBits(x_hom_ref)
-            ## argh, 
-            for(i_B in 1:(B_bit_prob_divide_8)) {
-                ## (2 * B_bit_prob_divide_8) * (i_sample - 1) + 2 * (i_B - 1) + i_gen
-                data[last_byte_used + i_B] <-
-                    packBits(x_bits[const_where[[i_B]]], type = "raw")
-            }
-            last_byte_used <- last_byte_used + B_bit_prob_divide_8            
-        }
-    }
     ## 
     if (CompressedSNPBlocks == 1) {
         dataC <- memCompress(data, type = "gzip")        
@@ -521,6 +499,60 @@ prepare_genotypes_for_one_snp <- function(
         )
     )
 }
+
+
+## prob_mat has rows = samples
+## columns are hom_ref, het, hom_alt
+make_raw_data_vector_for_probabilities <- function(
+   gp_sub,
+   B_bit_prob
+) {
+    N <- dim(gp_sub)[[1]]
+    data_local <- vector(mode = "raw", length = N * (B_bit_prob / 8))
+    ## constants
+    B_bit_prob_divide_8 <- (B_bit_prob / 8)
+    const_2_bit <- (2 ** B_bit_prob - 1)
+    const_where <- list(
+        1:8,
+        9:16,
+        17:24,
+        25:32
+    )
+    last_byte_used <- 0
+    ## be careful - no seek used below 
+    ## do not change for loops without checking format specifications
+    for(i_sample in 1:N) {
+        ## get int representatiosn using rule
+        if (is.na(gp_sub[i_sample, 1]))  {
+            v <- rep(0, 3)
+        } else {
+            v <- gp_sub[i_sample, ] * (const_2_bit)
+            v2 <- v - floor(v)
+            F <- as.integer(round(sum(v2)))
+            if (F > 0) {
+                o <- order(v2, decreasing = TRUE)            
+                for(i in 1:F) {
+                    v[o[i]] <- ceiling(v[o[i]])
+                }
+                for(i in F:3) {
+                    v[o[i]] <- floor(v[o[i]])
+                }
+            }
+        }
+        for(i_gen in 1:2) {
+            x_hom_ref <- v[i_gen]
+            x_bits <- robbie_intTobits(x_hom_ref, B_bit_prob) 
+            for(i_B in 1:(B_bit_prob_divide_8)) {
+                data_local[last_byte_used + i_B] <-
+                    packBits(x_bits[const_where[[i_B]]], type = "raw")
+            }
+            last_byte_used <- last_byte_used + B_bit_prob_divide_8            
+        }
+    }
+    return(data_local)
+}
+
+
 
 ## want unsigned integer
 ## so B_bit_prob = 8, can do 0 through 

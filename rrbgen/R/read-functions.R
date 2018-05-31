@@ -346,7 +346,9 @@ load_genotypes_for_one_snp <- function(to.read, binary_start, num_K_alleles, N, 
         if (sum(ploidy[1:N] != 2)) {
             stop("this code does not support non-2 ploidy")
         }
-        data_raw_for_probs <- readBin(dataC, size = 1, "raw", n = 2 * N * (B_bit_prob / 8), endian = "little")
+        ## ARGH this only works for 2
+        ## data_raw_for_probs <- readBin(dataC, size = (B_bit_prob / 8), "integer", n = 2 * N, endian = "little", signed = FALSE)
+        data_raw_for_probs <- readBin(dataC, size = 1, "raw", n = 2 * N * (B_bit_prob / 8), endian = "little", signed = FALSE)
         gen_probs <- convert_raw_probabilities_to_double_probabilities(
             data_raw_for_probs,
             N,
@@ -372,24 +374,39 @@ convert_raw_probabilities_to_double_probabilities <- function(
 ) {
     gen_probs <- array(NA, c(N, 3))    
     B_bit_prob_divide_8 <- B_bit_prob / 8
-    w <- 1:B_bit_prob_divide_8
+    w_last <- 1:B_bit_prob_divide_8
     last_byte_used <- 0
+    w <- 1:B_bit_prob
+    m <- 2 ** (0:(B_bit_prob - 1))
+    denom <- (2 ** B_bit_prob - 1)
     for(iSample in 1:N) {
-        b_hom_ref <- data_raw_for_probs[last_byte_used + w]
-        b_het <- data_raw_for_probs[last_byte_used + w + B_bit_prob_divide_8]
-        last_byte_used <- last_byte_used + B_bit_prob_divide_8 * 2
+        b_hom_ref <- data_raw_for_probs[last_byte_used + w_last]
+        b_het <- data_raw_for_probs[last_byte_used + w_last + B_bit_prob_divide_8]
+        last_byte_used <- last_byte_used + B_bit_prob_divide_8 * 2        
+        ##x_hom_ref <- data_raw_for_probs[2 * (iSample - 1) + 1]
+        ##x_het <- data_raw_for_probs[2 * (iSample - 1) + 2]
         if (is_missing[iSample]) {
             ## dosage[iSample] <- NA
             gen_probs[iSample, 1:3] <- NA
         } else {
-            x <- sum(as.integer(rawToBits(b_hom_ref)[1:B_bit_prob]) * (2 ** (0:(B_bit_prob - 1)))    )
-            p_hom_ref <- x / (2 ** B_bit_prob - 1)
-            x <- sum(as.integer(rawToBits(b_het)[1:B_bit_prob]) * (2 ** (0:(B_bit_prob - 1)))    )
-            p_het <- x / (2 ** B_bit_prob - 1)
+            x_hom_ref <- convert_raw_to_int(b_hom_ref, B_bit_prob, w, m)
+            ## x_hom_ref <- sum(as.integer(rawToBits(b_hom_ref)[1:B_bit_prob]) * (2 ** (0:(B_bit_prob - 1)))    )
+            p_hom_ref <- x_hom_ref / denom
+            ## x_het <- sum(as.integer(rawToBits(b_het)[1:B_bit_prob]) * (2 ** (0:(B_bit_prob - 1)))    )
+            x_het <- convert_raw_to_int(b_het, B_bit_prob, w, m)
+            p_het <- x_het / denom
             p_hom_alt <- 1 - p_hom_ref - p_het
             ## dosage[iSample] <- p_het * 2 * p_hom_alt
             gen_probs[iSample, 1:3] <- c(p_hom_ref, p_het, p_hom_alt)
         }
     }
     return(gen_probs)
+}
+
+## R does not seem to do arbitrary byte lengths
+## so this *should* work
+## just ugly
+convert_raw_to_int <- function(x, B_bit_prob, w, m) {
+    z <- rawToBits(x)[w]
+    return(sum(as.integer(z) * m))
 }

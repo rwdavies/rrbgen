@@ -9,19 +9,26 @@ for(key in c("--file=", "--f=")) {
     i <- substr(args, 1, nchar(key)) == key
     if (sum(i) == 1) {
         script_dir <- dirname(substr(args[i], nchar(key) + 1, 1000))
-        setwd(file.path(script_dir, "../"))
+        setwd(file.path(script_dir, "../"))        
     }
 }
+
+
+setwd("~/Dropbox/rrbgen/rrbgen/R/"); source("read-functions.R") ;source("write-functions.R"); source("test-drivers.R");setwd("~/Dropbox/rrbgen/")
+
 
 
 profout <- tempfile()
 Rprof(file = profout, gc.profiling = TRUE, line.profiling = TRUE)
 
 ## what to profile
+message(date())
 external_bgen_dir <- "./external/bgen/"
 bit <- 16
 external_bgen_file <- file.path(external_bgen_dir, paste0("example.", bit, "bits.bgen"))
-out <- rrbgen_load(external_bgen_file)
+for(i in 1:3)
+    out <- rrbgen_load(external_bgen_file)
+message(date())
 ## end of what to profile
 
 Rprof(NULL)

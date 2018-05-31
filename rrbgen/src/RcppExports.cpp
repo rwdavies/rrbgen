@@ -16,9 +16,22 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// rcpp_make_raw_data_vector_for_probabilities
+Rcpp::RawVector rcpp_make_raw_data_vector_for_probabilities(Rcpp::NumericMatrix gp_sub, int B_bit_prob);
+RcppExport SEXP _rrbgen_rcpp_make_raw_data_vector_for_probabilities(SEXP gp_subSEXP, SEXP B_bit_probSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::NumericMatrix >::type gp_sub(gp_subSEXP);
+    Rcpp::traits::input_parameter< int >::type B_bit_prob(B_bit_probSEXP);
+    rcpp_result_gen = Rcpp::wrap(rcpp_make_raw_data_vector_for_probabilities(gp_sub, B_bit_prob));
+    return rcpp_result_gen;
+END_RCPP
+}
 
 static const R_CallMethodDef CallEntries[] = {
     {"_rrbgen_rcpp_return_same_int", (DL_FUNC) &_rrbgen_rcpp_return_same_int, 1},
+    {"_rrbgen_rcpp_make_raw_data_vector_for_probabilities", (DL_FUNC) &_rrbgen_rcpp_make_raw_data_vector_for_probabilities, 2},
     {NULL, NULL, 0}
 };
 

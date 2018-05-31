@@ -6,3 +6,8 @@ rcpp_return_same_int <- function(hello) {
     .Call('_rrbgen_rcpp_return_same_int', PACKAGE = 'rrbgen', hello)
 }
 
+#' @export
+rcpp_make_raw_data_vector_for_probabilities <- function(gp_sub, B_bit_prob = 16L) {
+    .Call('_rrbgen_rcpp_make_raw_data_vector_for_probabilities', PACKAGE = 'rrbgen', gp_sub, B_bit_prob)
+}
+
