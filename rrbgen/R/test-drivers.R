@@ -31,6 +31,41 @@ make_fake_gp <- function(sample_names, var_ids, random_fraction = 0.05) {
     return(gp)
 }
 
+## gp is nice and all
+## but STITCH will look like this
+## list_of_gp_raw_t_hom_ref where rows = individuals & cols = snps
+## list_of_gp_raw_t_het     where rows = individuals & cols = snps
+convert_gp_to_list_of_raw <- function(gp, nCores = 1, B_bit_prob = 8) {
+    M <- dim(gp)[[1]]
+    N <- dim(gp)[[2]]
+    ## nCores here doesn't mean cores
+    ## but this is how this will be generated in STITCH
+    sampleRange <- getSampleRange(N, nCores)    
+    list_of_gp_raw_t <- as.list(1:length(sampleRange))
+    ##
+    for(i_range in 1:length(sampleRange)) {
+        whoR <- sampleRange[[i_range]]
+        who <- whoR[1]:whoR[2]
+        N2 <- length(who)
+        to_out <- array(as.raw(0), c(2 * N2 * (B_bit_prob / 8), M))
+        ## now fill this in
+        for(i_sample in 1:length(who)) {
+            ## every SNP for this individual
+            x <- make_raw_data_vector_for_probabilities(
+                gp[, who[i_sample], ],
+                B_bit_prob
+            )
+            ## 
+            for(j in 1:(2*(B_bit_prob / 8))) {
+                to_out[2 * (B_bit_prob / 8) * (i_sample - 1) + j, ] <-
+                    x[2 * (B_bit_prob / 8) * (1:M - 1) + j]
+            }
+        }
+        list_of_gp_raw_t[[i_range]] <- to_out
+    }        
+    return(list_of_gp_raw_t)
+}
+
 
 acceptable_tolerance <- function(B_bit_prob) {
     ## tolerance not quite working here for higher values

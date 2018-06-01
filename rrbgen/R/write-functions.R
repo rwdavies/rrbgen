@@ -15,7 +15,7 @@ rrbgen_write <- function(
     sample_names = NULL,
     var_info = NULL,
     gp = NULL,
-    gp_raw = NULL,
+    list_of_gp_raw_t = NULL,
     free = NULL,
     Layout = 2,
     CompressedSNPBlocks = 1,
@@ -44,11 +44,11 @@ rrbgen_write <- function(
     ## for now, this is fixed
     per_var_num_K_alleles <- rep(2, M)    
     ## 
-    if (is.null(gp) == FALSE) {
+    if ((is.null(gp) == FALSE) | (is.null(list_of_gp_raw_t) == FALSE)) {
         ## take gps or gp raw, make per_var_C, per_var_D
         out <- prepare_genotypes_for_all_snps(
             gp = gp,
-            gp_raw = gp_raw,
+            list_of_gp_raw_t = list_of_gp_raw_t,
             M = M,
             N = N,
             CompressedSNPBlocks = CompressedSNPBlocks,
@@ -396,15 +396,15 @@ write_variant_identifying_data_for_one_snp <- function(
 
 prepare_genotypes_for_all_snps <- function(
     gp = NULL,
-    gp_raw = NULL,
+    list_of_gp_raw_t = NULL,
     M,
     N,
     CompressedSNPBlocks,
     B_bit_prob,
     per_var_num_K_alleles
 ) {
-    if ((as.integer(is.null(gp)) + as.integer(is.null(gp_raw))) != 1) {
-        stop("Please write using either one of gp or gp_raw")
+    if ((as.integer(is.null(gp)) + as.integer(is.null(list_of_gp_raw_t))) != 1) {
+        stop("Please write using either one of gp or list_of_gp_raw_t")
     }
     ## build container?
     per_var_C <- array(0, M)
@@ -414,7 +414,7 @@ prepare_genotypes_for_all_snps <- function(
     for(i_snp in 1:M) {
         out <- prepare_genotypes_for_one_snp(
             gp = gp,
-            gp_raw = gp_raw,
+            list_of_gp_raw_t = list_of_gp_raw_t,
             i_snp = i_snp,
             CompressedSNPBlocks = CompressedSNPBlocks,
             B_bit_prob = B_bit_prob,
@@ -442,7 +442,7 @@ prepare_genotypes_for_all_snps <- function(
 ## those are considered part of variant ID block
 prepare_genotypes_for_one_snp <- function(
     gp = NULL,
-    gp_raw = NULL,
+    list_of_gp_raw_t = NULL,
     i_snp,
     CompressedSNPBlocks,
     B_bit_prob,
@@ -463,18 +463,35 @@ prepare_genotypes_for_one_snp <- function(
     ## missing and ploidy
     local_offset <- 4 + 2 + 1 + 1
     ##
-    missing <- is.na(gp[i_snp, , 1])
-    ##
-    data[local_offset + 1:N] <- make_ploidy_raw(missing)
-    ## finally, last 2 things
-    phased_flag <- 0
-    data[4 + 2 + 1 + 1 + N + 1] <- writeBin(as.integer(phased_flag), v, size = 1, endian = "little")
-    data[4 + 2 + 1 + 1 + N + 1 + 1] <- writeBin(as.integer(B_bit_prob), v, size = 1, endian = "little")
-    ## genotype probabilities
-    data[non_gp_stuff_length + 1:(2 * N * (B_bit_prob / 8))] <- rcpp_make_raw_data_vector_for_probabilities(
-        gp_sub = gp[i_snp, , ],
-        B_bit_prob = B_bit_prob
-    )
+    ## two options here
+    ## one - using genotype probabilities
+    ## other, using weird STITCH format
+    ## 
+    if (is.null(gp) == FALSE) {
+        missing <- is.na(gp[i_snp, , 1])
+        data[local_offset + 1:N] <- make_ploidy_raw(missing)
+        ## finally, last 2 things
+        phased_flag <- 0
+        data[4 + 2 + 1 + 1 + N + 1] <- writeBin(as.integer(phased_flag), v, size = 1, endian = "little")
+        data[4 + 2 + 1 + 1 + N + 1 + 1] <- writeBin(as.integer(B_bit_prob), v, size = 1, endian = "little")
+        ## genotype probabilities
+        data[non_gp_stuff_length + 1:(2 * N * (B_bit_prob / 8))] <- rcpp_make_raw_data_vector_for_probabilities(
+            gp_sub = gp[i_snp, , ],
+            B_bit_prob = B_bit_prob
+        )
+    } else {
+        data[local_offset + 1:N] <- as.raw(2) ## 2 ploidy, no missing
+        phased_flag <- 0
+        data[4 + 2 + 1 + 1 + N + 1] <- writeBin(as.integer(phased_flag), v, size = 1, endian = "little")
+        data[4 + 2 + 1 + 1 + N + 1 + 1] <- writeBin(as.integer(B_bit_prob), v, size = 1, endian = "little")
+        ## genotpe probabilities - already in list form!
+        c <- non_gp_stuff_length
+        for(i_sheet in 1:length(list_of_gp_raw_t)) {
+            X <- nrow(list_of_gp_raw_t[[i_sheet]])
+            data[c + 1:X] <- list_of_gp_raw_t[[i_sheet]][, i_snp]
+            c <- c + X
+        }
+    }
     ## 
     if (CompressedSNPBlocks == 1) {
         dataC <- memCompress(data, type = "gzip")        
