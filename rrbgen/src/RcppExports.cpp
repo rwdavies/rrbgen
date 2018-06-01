@@ -7,7 +7,7 @@ using namespace Rcpp;
 
 // rcpp_return_same_int
 int rcpp_return_same_int(const int hello);
-RcppExport SEXP rrbgen_rcpp_return_same_int(SEXP helloSEXP) {
+RcppExport SEXP _rrbgen_rcpp_return_same_int(SEXP helloSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -18,7 +18,7 @@ END_RCPP
 }
 // rcpp_make_raw_data_vector_for_probabilities
 Rcpp::RawVector rcpp_make_raw_data_vector_for_probabilities(Rcpp::NumericMatrix& gp_sub, int B_bit_prob);
-RcppExport SEXP rrbgen_rcpp_make_raw_data_vector_for_probabilities(SEXP gp_subSEXP, SEXP B_bit_probSEXP) {
+RcppExport SEXP _rrbgen_rcpp_make_raw_data_vector_for_probabilities(SEXP gp_subSEXP, SEXP B_bit_probSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -30,7 +30,7 @@ END_RCPP
 }
 // rcpp_convert_raw_probabilities_to_double_probabilities
 Rcpp::NumericMatrix rcpp_convert_raw_probabilities_to_double_probabilities(const Rcpp::RawVector& data_raw_for_probs, int N, int B_bit_prob, Rcpp::LogicalVector& is_missing);
-RcppExport SEXP rrbgen_rcpp_convert_raw_probabilities_to_double_probabilities(SEXP data_raw_for_probsSEXP, SEXP NSEXP, SEXP B_bit_probSEXP, SEXP is_missingSEXP) {
+RcppExport SEXP _rrbgen_rcpp_convert_raw_probabilities_to_double_probabilities(SEXP data_raw_for_probsSEXP, SEXP NSEXP, SEXP B_bit_probSEXP, SEXP is_missingSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -41,4 +41,16 @@ BEGIN_RCPP
     rcpp_result_gen = Rcpp::wrap(rcpp_convert_raw_probabilities_to_double_probabilities(data_raw_for_probs, N, B_bit_prob, is_missing));
     return rcpp_result_gen;
 END_RCPP
+}
+
+static const R_CallMethodDef CallEntries[] = {
+    {"_rrbgen_rcpp_return_same_int", (DL_FUNC) &_rrbgen_rcpp_return_same_int, 1},
+    {"_rrbgen_rcpp_make_raw_data_vector_for_probabilities", (DL_FUNC) &_rrbgen_rcpp_make_raw_data_vector_for_probabilities, 2},
+    {"_rrbgen_rcpp_convert_raw_probabilities_to_double_probabilities", (DL_FUNC) &_rrbgen_rcpp_convert_raw_probabilities_to_double_probabilities, 4},
+    {NULL, NULL, 0}
+};
+
+RcppExport void R_init_rrbgen(DllInfo *dll) {
+    R_registerRoutines(dll, NULL, CallEntries, NULL, NULL);
+    R_useDynamicSymbols(dll, FALSE);
 }
