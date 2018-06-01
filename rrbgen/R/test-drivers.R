@@ -74,3 +74,37 @@ acceptable_tolerance <- function(B_bit_prob) {
     tolerance <- as.numeric(c("8" = tolerance * 2, "16" = tolerance * 8, "24" = 5e-5, "32" = 5e-5)[as.character(B_bit_prob)])
     return(tolerance)
 }
+
+
+convert_gp_to_dosage <- function(gp, i_snp, normalize = TRUE) {
+    dosage <- gp[i_snp, , 2] * 1 + gp[i_snp, , 3] * 2
+    if (normalize) {
+        dosage[is.na(dosage)] <- mean(dosage, na.rm = TRUE)
+        dosage <- dosage - mean(dosage)
+    }
+    return(dosage)
+}
+
+make_fake_pheno_file <- function(gp, i_snp = 4, h2_g = 0.5) {
+    dosage <- convert_gp_to_dosage(gp, i_snp)     
+    y_snp <- dosage / sd(dosage) * sqrt(h2_g)
+    y_e <- rnorm(dim(gp)[2], mean = 0, sd = sqrt(1 - h2_g))
+    y <- y_snp + y_e
+    ##
+    pheno_file <- tempfile()
+    m <- matrix(y, ncol = 1)
+    colnames(m) <- "pheno1"
+    write.table(
+        m,
+        file = pheno_file,
+        row.names = FALSE,
+        col.names = TRUE,
+        quote = FALSE
+    )
+    return(
+        list(
+            pheno_file = pheno_file,
+            y = y
+        )
+    )
+}

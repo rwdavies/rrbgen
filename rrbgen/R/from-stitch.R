@@ -22,3 +22,5 @@ getSampleRange <- function(
     sampleRange <- sampleRange[sapply(sampleRange, is.null) == FALSE]
     return(sampleRange)
 }
+
+
