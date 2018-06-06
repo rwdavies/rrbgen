@@ -1,6 +1,6 @@
 rrbgen
 ======
-**__Current Version: 0.0.0__**
+**__Current Version: 0.0.1__**
 Release date: June 6, 2018
 
 Robbie's lightweight limited functionality R bgen read/write library
