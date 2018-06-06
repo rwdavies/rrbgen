@@ -89,7 +89,7 @@ test_that("can write a full bgen file", {
 
     sample_names <- c("edgar", "gsp", "silva", "lesnar")
     var_info <- make_fake_var_info(8)
-    var_ids <- var_info[, "snpid"]
+    var_ids <- var_info[, "varid"]
 
     set.seed(234)
     gp <- make_fake_gp(sample_names, var_ids, random_fraction = 0.05)
@@ -145,7 +145,7 @@ test_that("writing a full bgen file is the same using either gp or list of gp_ra
     set.seed(234)    
     sample_names <- paste0("samp", 1:40)
     var_info <- make_fake_var_info(100)
-    var_ids <- var_info[, "snpid"]
+    var_ids <- var_info[, "varid"]
     CompressedSNPBlocks <- 1
     
     gp <- make_fake_gp(sample_names, var_ids, random_fraction = 0)

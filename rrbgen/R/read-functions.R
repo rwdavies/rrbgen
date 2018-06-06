@@ -1,15 +1,19 @@
 #' @title Load entire bgen file
 #' @param bgen_file Path to bgen file to load
-#' @param gp_names_col Which column to use to label the variants in the first dimension of the genotype probabilities. Note that bgen has two variant ID columns, a variant identifier (here labelled snpid) and rsid (here labelled rsid)
+#' @param gp_names_col Which column to use to label the variants in the first dimension of the genotype probabilities. Note that bgen has two variant ID columns, a variant identifier (here labelled varid) and rsid (here labelled rsid)
+#' @param vars_to_get Only load these variants from file (from varid column). Note that this requires a complete pass over the data, although this should be efficient, as nothing is decompressed
+#' @param samples_to_get Only load these samples from file. Note that this requires a complete pass over the data, although this should be efficient, as nothing is decompressed
 #' @return gp, sample_names and var_info
 #' @author Robert Davies
 #' @export
 rrbgen_load <- function(
     bgen_file,
-    gp_names_col = "snpid"
+    gp_names_col = "varid",
+    vars_to_get = NULL,
+    samples_to_get = NULL
 ) {
-    if (! (gp_names_col %in% c("snpid", "rsid"))) {
-        stop("Please select gp_in_names as one of snpid or rsid, to select how to name dimnames(gp)[[1]]")
+    if (! (gp_names_col %in% c("varid", "rsid"))) {
+        stop("Please select gp_in_names as one of varid or rsid, to select how to name dimnames(gp)[[1]]")
     }
     ## here load all samples and variants, unless instructed otherwise
     to.read <- file(bgen_file, "rb")
@@ -33,10 +37,48 @@ rrbgen_load <- function(
     per_var_L_vid <- out$per_var_L_vid
     per_var_L_gdb <- out$per_var_L_gdb
     per_var_num_K_alleles <- out$per_var_num_K_alleles
+    ## determine what we need - SNPs
+    if (is.null(vars_to_get) == FALSE) {
+        which_vars_to_load <- match(vars_to_get, var_info[, "varid"])
+        if (sum(is.na(which_vars_to_load)) > 0) {
+            stop(paste0(
+                "Cannot find some of the variants. The first such missing variants are:",
+                paste0(head(vars_to_get[is.na(which_vars_to_load)]), collapse = ", ")
+            ))
+        }
+        ## re-cast some variables
+        M <- length(which_vars_to_load)
+        var_info <- var_info[which_vars_to_load, , drop = FALSE]
+    } else {
+        which_vars_to_load <- 1:M
+    }
+    ## determine what samples we need
+    if (is.null(samples_to_get) == FALSE) {
+        t <- table(samples_to_get)
+        if (sum(t > 1) > 0) {
+            stop(paste0("Please do not request the same sample more than once. The following sample was requested ", t[which.max(t > 1)], " times:", names(t)[which.max(t > 1)]))
+        }
+        which_samples_to_load <- match(samples_to_get, sample_names)
+        if (sum(is.na(which_samples_to_load)) > 0) {
+            stop(paste0(
+                "Cannot find some of the samples. The first such missing samples are:",
+                paste0(head(samples_to_get[is.na(which_samples_to_load)]), collapse = ", ")
+            ))
+        }
+        ## now - make extraction vector
+        sample_names <- sample_names[which_samples_to_load] ## can re-cast here
+        N_to_load <- length(which_samples_to_load)        
+    } else {
+        required_data_raw_for_samples <- NULL
+        which_samples_to_load <- NULL
+        N_to_load <- N
+    }
+    required_data_raw_for_samples <- NULL ## initialize as raw as requires B_bit_prob which we cannot see until we load a SNP    
     ## load genotypes
-    gp <- array(NA, c(M, N, 3))
-    for(i_var in 1:M) {
-        binary_start <- per_var_offset[i_var] + per_var_L_vid[i_var]
+    gp <- array(NA, c(M, N_to_load, 3))
+    for(i_var in 1:length(which_vars_to_load)) {
+        var_to_load <- which_vars_to_load[i_var]
+        binary_start <- per_var_offset[var_to_load] + per_var_L_vid[var_to_load]
         ## so need to skip C and/or D
         if (CompressedSNPBlocks == 1) {
             binary_start <- binary_start + 8
@@ -44,10 +86,24 @@ rrbgen_load <- function(
             binary_start <- binary_start + 4
         }
         ## now this is reading genotypes not full genotype data block        
-        C <- per_var_C[i_var]
-        num_K_alleles <- per_var_num_K_alleles[i_var]
-        out <- load_genotypes_for_one_snp(to.read, binary_start, num_K_alleles, N, CompressedSNPBlocks, C)
+        C <- per_var_C[var_to_load]
+        num_K_alleles <- per_var_num_K_alleles[var_to_load]
+        out <- load_genotypes_for_one_snp(
+            to.read = to.read,
+            binary_start = binary_start,
+            C = C,
+            num_K_alleles = num_K_alleles,
+            N = N,
+            N_to_load = N_to_load,
+            CompressedSNPBlocks = CompressedSNPBlocks,
+            required_data_raw_for_samples = required_data_raw_for_samples,
+            which_samples_to_load = which_samples_to_load
+        )
         gp[i_var, , ] <- out$gen_probs
+        if (i_var == 1) {
+            ## will be NULL anyway if not requesting all samples
+            required_data_raw_for_samples <- out$required_data_raw_for_samples
+        }
     }
     ## add names
     dimnames(gp)[[1]] <- var_info[, gp_names_col]
@@ -187,7 +243,7 @@ load_variant_identifying_data_for_all_snps <- function(to.read, offset, Layout, 
     per_var_num_K_alleles <- array(NA, M)
     ## 
     var_info <- array(NA, c(M, 6))
-    colnames(var_info) <- c("chr", "snpid", "rsid", "position", "ref", "alt")
+    colnames(var_info) <- c("chr", "varid", "rsid", "position", "ref", "alt")
     ##
     for(i_var in 1:M) {
         out <- load_variant_identifying_data_for_one_snp(to.read, per_var_offset[i_var], Layout, CompressedSNPBlocks)
@@ -253,7 +309,7 @@ load_variant_identifying_data_for_one_snp <- function(to.read, binary_start, Lay
     ## make a summary here, similar to .gen file
     variant_info <- c(
         chr = var_chr_char,
-        snpid = var_id_char,
+        varid = var_id_char,
         rsid = var_rsid_char,
         position = var_position,
         ref = alleles[1],
@@ -299,7 +355,20 @@ load_variant_identifying_data_for_one_snp <- function(to.read, binary_start, Lay
 
 ## does not include C or D
 ## this comes from 
-load_genotypes_for_one_snp <- function(to.read, binary_start, num_K_alleles, N, CompressedSNPBlocks, C) {
+load_genotypes_for_one_snp <- function(
+    to.read,
+    binary_start,
+    C,    
+    num_K_alleles,
+    N,
+    N_to_load = NULL,
+    CompressedSNPBlocks,
+    required_data_raw_for_samples = NULL,
+    which_samples_to_load = NULL
+) {
+    if (is.null(N_to_load)) {
+        N_to_load <- N
+    }
     seek(to.read, where = binary_start)    
     ## Genotype data block
     data_compressed <- readBin(to.read, size = 1, "raw", n = C - 4, endian = "little")
@@ -347,22 +416,34 @@ load_genotypes_for_one_snp <- function(to.read, binary_start, num_K_alleles, N, 
         if (sum(ploidy[1:N] != 2)) {
             stop("this code does not support non-2 ploidy")
         }
-        ## ARGH this only works for 2
-        ## data_raw_for_probs <- readBin(dataC, size = (B_bit_prob / 8), "integer", n = 2 * N, endian = "little", signed = FALSE)
+        ## 
         data_raw_for_probs <- readBin(dataC, size = 1, "raw", n = 2 * N * (B_bit_prob / 8), endian = "little", signed = FALSE)
+        if (is.null(which_samples_to_load) == FALSE) {
+            ## only do this once
+            if (is.null(required_data_raw_for_samples)) {
+                required_data_raw_for_samples <- unlist(lapply(which_samples_to_load, function(samp) {
+                    o <- 2 * B_bit_prob / 8 * (samp - 1)
+                    o + 1:(2* B_bit_prob / 8)
+                }))
+            }
+            ##
+            data_raw_for_probs <- data_raw_for_probs[required_data_raw_for_samples]
+            is_missing <- is_missing[which_samples_to_load]
+        }
+        ## only convert some of them!
         gen_probs <- rcpp_convert_raw_probabilities_to_double_probabilities(
             data_raw_for_probs,
-            N,
+            N_to_load,
             B_bit_prob,
             is_missing
         )
-        
     }
     close(dataC)
     rm(data)
     return(
         list(
-            gen_probs = gen_probs
+            gen_probs = gen_probs,
+            required_data_raw_for_samples = required_data_raw_for_samples
         )
     )
 }

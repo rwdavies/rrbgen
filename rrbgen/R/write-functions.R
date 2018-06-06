@@ -1,7 +1,7 @@
 #' @title Write variant information to a bgen file
 #' @param bgen_file Path to bgen file to be written to
 #' @param sample_names character vector of sample names
-#' @param var_info var_info (6 first columns of gen file, or chr, snpid, rsid, position (1-based), ref, alt)
+#' @param var_info var_info (6 first columns of gen file, or chr, varid, rsid, position (1-based), ref, alt)
 #' @param gp genotype probabilities as 3-dimensional array, where dim1 = variants, dim2 = samples, dim3 = hom ref, het, hom alt
 #' @param list_of_gp_raw_t list of raw data. bespoke format. to understand, investigate the tests
 #' @param free free text for header. Should probably remain NULL. Not read if written in rrbgen_read
@@ -239,7 +239,7 @@ prepare_variant_identifying_data_for_all_snps <- function(
     per_var_C
 ) {
     M <- nrow(var_info)
-    per_var_snpid_raw <- lapply(var_info[, "snpid"], charToRaw)
+    per_var_varid_raw <- lapply(var_info[, "varid"], charToRaw)
     per_var_rsid_raw <- lapply(var_info[, "rsid"], charToRaw)
     per_var_chr_raw <- lapply(var_info[, "chr"], charToRaw)
     per_var_ref_allele_raw <- lapply(var_info[, "ref"], charToRaw)
@@ -252,7 +252,7 @@ prepare_variant_identifying_data_for_all_snps <- function(
     }
     per_var_L_vid <- per_var_L_vid + 16 +
         4 * sapply(per_var_num_K_alleles, length) +
-        sapply(per_var_snpid_raw, length) +
+        sapply(per_var_varid_raw, length) +
         sapply(per_var_rsid_raw, length) +
         sapply(per_var_chr_raw, length) + 
         sapply(per_var_ref_allele_raw, length) + 
@@ -274,7 +274,7 @@ prepare_variant_identifying_data_for_all_snps <- function(
     }
     return(
         list(
-            per_var_snpid_raw = per_var_snpid_raw,
+            per_var_varid_raw = per_var_varid_raw,
             per_var_rsid_raw = per_var_rsid_raw,
             per_var_chr_raw = per_var_chr_raw,
             per_var_num_K_alleles = per_var_num_K_alleles,
@@ -301,7 +301,7 @@ write_variant_identifying_data_and_genotypes_for_all_snps <- function(
     Layout = 2,
     CompressedSNPBlocks = 1
 ) {
-    per_var_snpid_raw <- var_info_raw_list$per_var_snpid_raw
+    per_var_varid_raw <- var_info_raw_list$per_var_varid_raw
     per_var_rsid_raw <- var_info_raw_list$per_var_rsid_raw
     per_var_chr_raw <- var_info_raw_list$per_var_chr_raw
     per_var_ref_allele_raw <- var_info_raw_list$per_var_ref_allele_raw
@@ -316,7 +316,7 @@ write_variant_identifying_data_and_genotypes_for_all_snps <- function(
             binary_start = per_var_offset[i_var],
             C = per_var_C[i_var],
             D = per_var_D[i_var],
-            snpid_raw = per_var_snpid_raw[[i_var]],
+            varid_raw = per_var_varid_raw[[i_var]],
             rsid_raw = per_var_rsid_raw[[i_var]],
             chr_raw = per_var_chr_raw[[i_var]],
             position = var_info[i_var, "position"],
@@ -349,7 +349,7 @@ write_variant_identifying_data_for_one_snp <- function(
     binary_start,
     C,
     D,
-    snpid_raw,
+    varid_raw,
     rsid_raw,
     chr_raw,
     position,    
@@ -363,7 +363,7 @@ write_variant_identifying_data_for_one_snp <- function(
     if (Layout == 1) {
         writeBin(as.integer(N), to.write, endian = "little")
     }
-    for(to_write_raw in list(snpid_raw, rsid_raw, chr_raw)) {
+    for(to_write_raw in list(varid_raw, rsid_raw, chr_raw)) {
         writeBin(as.integer(length(to_write_raw)), to.write, size = 2, endian = "little")
         writeBin(to_write_raw, to.write, size = 1, endian = "little")
     }
