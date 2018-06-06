@@ -1,6 +1,6 @@
-#' @title Load bgen file
+#' @title Load entire bgen file
 #' @param bgen_file Path to bgen file to load
-#' @param gp_names_col Which column to use to label the variants in the first dimension of the genotype probabilities
+#' @param gp_names_col Which column to use to label the variants in the first dimension of the genotype probabilities. Note that bgen has two variant ID columns, a variant identifier (here labelled snpid) and rsid (here labelled rsid)
 #' @return gp, sample_names and var_info
 #' @author Robert Davies
 #' @export
@@ -64,7 +64,7 @@ rrbgen_load <- function(
 }
 
 
-#' @title Load samples from a bgen file
+#' @title Load samples names only from a bgen file
 #' @param bgen_file Path to bgen file to load
 #' @return sample_names
 #' @author Robert Davies
@@ -87,7 +87,7 @@ rrbgen_load_samples <- function(
 }
 
 
-#' @title Load variant information from a bgen file
+#' @title Load variant information only from a bgen file
 #' @param bgen_file Path to bgen file to load
 #' @return var_info
 #' @author Robert Davies

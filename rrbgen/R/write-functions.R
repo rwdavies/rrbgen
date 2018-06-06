@@ -1,12 +1,12 @@
 #' @title Write variant information to a bgen file
-#' @param bgen_file Path to bgen file
-#' @param sample_names sample_names character vector
-#' @param var_info var_info (6 first columns of gen file)
-#' @param gp genotype probabilities (see examples)
-#' @param gp_raw not yet supported
-#' @param free free text for header 
+#' @param bgen_file Path to bgen file to be written to
+#' @param sample_names character vector of sample names
+#' @param var_info var_info (6 first columns of gen file, or chr, snpid, rsid, position (1-based), ref, alt)
+#' @param gp genotype probabilities as 3-dimensional array, where dim1 = variants, dim2 = samples, dim3 = hom ref, het, hom alt
+#' @param list_of_gp_raw_t list of raw data. bespoke format. to understand, investigate the tests
+#' @param free free text for header. Should probably remain NULL. Not read if written in rrbgen_read
 #' @param Layout Only supported 2 (see bgen spec)
-#' @param CompressedSNPBlocks Whether to (1) or not to (0) compress genotype probabilities
+#' @param CompressedSNPBlocks Only supported 1. Whether to (1) or not to (0) compress genotype probabilities
 #' @param B_bit_prob How many bits to use to encode genotype probabilities (only supported 8, 16, 24, 32)
 #' @author Robert Davies
 #' @export

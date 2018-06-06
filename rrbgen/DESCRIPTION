@@ -2,7 +2,7 @@ Package: rrbgen
 Type: Package
 Title: Robbie's lightweight limited functionality R bgen read/write library
 Version: 0.0.0
-Date: 2019-05-28
+Date: 2019-06-07
 Author: Robert William Davies
 Maintainer: Robert William Davies <robertwilliamdavies@gmail.com>
 Description: A lightweight R bgen library with limited functionality 
