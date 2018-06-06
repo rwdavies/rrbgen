@@ -2,6 +2,7 @@
 
 export(rcpp_convert_raw_probabilities_to_double_probabilities)
 export(rcpp_make_raw_data_vector_for_probabilities)
+export(rcpp_place_gp_t_into_output)
 export(rcpp_return_same_int)
 export(rrbgen_load)
 export(rrbgen_load_samples)

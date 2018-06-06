@@ -140,16 +140,18 @@ test_that("can write a full bgen file", {
 ## and so forth
 test_that("writing a full bgen file is the same using either gp or list of gp_raw ", {
 
-    ##     library("testthat"); setwd("~/Dropbox/rrbgen/rrbgen/R/"); source("read-functions.R") ;source("write-functions.R"); source("test-drivers.R"); library("rrbgen")
-    
+    ##   library("testthat"); setwd("~/Dropbox/rrbgen/rrbgen/R/"); source("read-functions.R") ;source("write-functions.R"); source("from-stitch.R"); source("test-drivers.R"); library("rrbgen")
+
+    set.seed(234)    
     nCores <- 3
-    sample_names <- paste0("samp", 1:20)
-    var_info <- make_fake_var_info(50)
+    sample_names <- paste0("samp", 1:40)
+    var_info <- make_fake_var_info(100)
     var_ids <- var_info[, "snpid"]
     CompressedSNPBlocks <- 1
     
-    set.seed(234)
     gp <- make_fake_gp(sample_names, var_ids, random_fraction = 0)
+    B_bit_prob <- 24
+    gp[1, 1, ] <- c(0.985363562311, 0.014634971374, 0.000001466315)
     
     for(B_bit_prob in c(8, 16, 24, 32)) {
         
@@ -184,6 +186,10 @@ test_that("writing a full bgen file is the same using either gp or list of gp_ra
         out_list_of_gp_raw_t <- rrbgen_load(bgen_file_list_of_gp_raw_t)
         
         expect_equal(out_list_of_gp_raw_t, out_gp)
+        ## floating point numbers don't "have" to be within the bounds
+        ## but rounded in R should
+        expect_equal(0 <= min(round(out_gp$gp)), TRUE)
+        expect_equal(max(round(out_gp$gp)) <= 1, TRUE)        
 
     }
         

@@ -28,6 +28,20 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// rcpp_place_gp_t_into_output
+void rcpp_place_gp_t_into_output(const Rcpp::NumericMatrix& gp_t, Rcpp::RawMatrix& to_out, const int i_sample, const int nSNPs, const int B_bit_prob);
+RcppExport SEXP _rrbgen_rcpp_place_gp_t_into_output(SEXP gp_tSEXP, SEXP to_outSEXP, SEXP i_sampleSEXP, SEXP nSNPsSEXP, SEXP B_bit_probSEXP) {
+BEGIN_RCPP
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Rcpp::NumericMatrix& >::type gp_t(gp_tSEXP);
+    Rcpp::traits::input_parameter< Rcpp::RawMatrix& >::type to_out(to_outSEXP);
+    Rcpp::traits::input_parameter< const int >::type i_sample(i_sampleSEXP);
+    Rcpp::traits::input_parameter< const int >::type nSNPs(nSNPsSEXP);
+    Rcpp::traits::input_parameter< const int >::type B_bit_prob(B_bit_probSEXP);
+    rcpp_place_gp_t_into_output(gp_t, to_out, i_sample, nSNPs, B_bit_prob);
+    return R_NilValue;
+END_RCPP
+}
 // rcpp_convert_raw_probabilities_to_double_probabilities
 Rcpp::NumericMatrix rcpp_convert_raw_probabilities_to_double_probabilities(const Rcpp::RawVector& data_raw_for_probs, int N, int B_bit_prob, Rcpp::LogicalVector& is_missing);
 RcppExport SEXP _rrbgen_rcpp_convert_raw_probabilities_to_double_probabilities(SEXP data_raw_for_probsSEXP, SEXP NSEXP, SEXP B_bit_probSEXP, SEXP is_missingSEXP) {
@@ -46,6 +60,7 @@ END_RCPP
 static const R_CallMethodDef CallEntries[] = {
     {"_rrbgen_rcpp_return_same_int", (DL_FUNC) &_rrbgen_rcpp_return_same_int, 1},
     {"_rrbgen_rcpp_make_raw_data_vector_for_probabilities", (DL_FUNC) &_rrbgen_rcpp_make_raw_data_vector_for_probabilities, 2},
+    {"_rrbgen_rcpp_place_gp_t_into_output", (DL_FUNC) &_rrbgen_rcpp_place_gp_t_into_output, 5},
     {"_rrbgen_rcpp_convert_raw_probabilities_to_double_probabilities", (DL_FUNC) &_rrbgen_rcpp_convert_raw_probabilities_to_double_probabilities, 4},
     {NULL, NULL, 0}
 };

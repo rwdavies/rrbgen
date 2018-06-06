@@ -1,7 +1,7 @@
 test_that("writing, reading, then writing is equivalent in R", {
 
-    gp_sub <- array(NA, c(8, 3))
-    dimnames(gp_sub)[[1]] <- list("sam", "jim", "jon", "bar", "bill", "fred", "missy", "weirdy")
+    gp_sub <- array(NA, c(9, 3))
+    dimnames(gp_sub)[[1]] <- list("sam", "jim", "jon", "bar", "bill", "fred", "missy", "weirdy", "weirdier")
     dimnames(gp_sub)[[2]] <- list("hom_ref", "het", "hom_alt")
     gp_sub[1, ] <- c(0, 0, 1)
     gp_sub[2, ] <- c(1, 0, 0)
@@ -11,7 +11,8 @@ test_that("writing, reading, then writing is equivalent in R", {
     gp_sub[6, ] <- c(0.7, 0.1, 0.2)
     gp_sub[7, ] <- c(NA, NA, NA)
     gp_sub[8, ] <- c(0.4721318,  0.2002350,  0.3276332 )
-    N <- 8
+    gp_sub[9, ] <- c(0.985363562311, 0.014634971374, 0.000001466315)
+    N <- 9
     is_missing <- array(FALSE, N)
     is_missing[7] <- TRUE    
 
@@ -45,8 +46,8 @@ test_that("writing, reading, then writing is equivalent in R", {
 
 test_that("can write matrix of triplet of probabilities to raw vector", {
 
-    gp_sub <- array(NA, c(8, 3))
-    dimnames(gp_sub)[[1]] <- list("sam", "jim", "jon", "bar", "bill", "fred", "missy", "weirdy")
+    gp_sub <- array(NA, c(9, 3))
+    dimnames(gp_sub)[[1]] <- list("sam", "jim", "jon", "bar", "bill", "fred", "missy", "weirdy", "weirdier")
     dimnames(gp_sub)[[2]] <- list("hom_ref", "het", "hom_alt")
     gp_sub[1, ] <- c(0, 0, 1)
     gp_sub[2, ] <- c(1, 0, 0)
@@ -56,12 +57,12 @@ test_that("can write matrix of triplet of probabilities to raw vector", {
     gp_sub[6, ] <- c(0.7, 0.1, 0.2)
     gp_sub[7, ] <- c(NA, NA, NA)
     gp_sub[8, ] <- c(0.4721318, 0.2002350, 0.3276332)
-    N <- 8
+    gp_sub[9, ] <- c(0.985363562311, 0.014634971374, 0.000001466315)    
+    N <- 9
     is_missing <- array(FALSE, N)
     is_missing[7] <- TRUE        
     
     for(B_bit_prob in c(8, 16, 24, 32)) {
-    ##for(B_bit_prob in c(8)) {                
             
         v <- make_raw_data_vector_for_probabilities(
             gp_sub = gp_sub,
@@ -73,10 +74,6 @@ test_that("can write matrix of triplet of probabilities to raw vector", {
             gp_sub = gp_sub,
             B_bit_prob  = B_bit_prob
         )
-        #print("R")
-        #print(v)
-        #print("cpp")
-        #print(v2)
         
         expect_equal(v, v2)
     }
@@ -86,8 +83,8 @@ test_that("can write matrix of triplet of probabilities to raw vector", {
 
 test_that("can read raw to form probabilities", {
 
-    gp_sub <- array(NA, c(8, 3))
-    dimnames(gp_sub)[[1]] <- list("sam", "jim", "jon", "bar", "bill", "fred", "missy", "weirdy")
+    gp_sub <- array(NA, c(9, 3))
+    dimnames(gp_sub)[[1]] <- list("sam", "jim", "jon", "bar", "bill", "fred", "missy", "weirdy", "weirder")
     dimnames(gp_sub)[[2]] <- list("hom_ref", "het", "hom_alt")
     gp_sub[1, ] <- c(0, 0, 1)
     gp_sub[2, ] <- c(1, 0, 0)
@@ -97,7 +94,8 @@ test_that("can read raw to form probabilities", {
     gp_sub[6, ] <- c(0.7, 0.1, 0.2)
     gp_sub[7, ] <- c(NA, NA, NA)
     gp_sub[8, ] <- c(0.4721318, 0.2002350, 0.3276332)
-    N <- 8
+    gp_sub[9, ] <- c(0.985363562311, 0.014634971374, 0.000001466315)        
+    N <- 9
     is_missing <- array(FALSE, N)
     is_missing[7] <- TRUE
     
@@ -122,10 +120,9 @@ test_that("can read raw to form probabilities", {
             is_missing
         )
 
-        ##print(gp1)
-        ##print(gp2)
-        
         expect_equal(gp1, gp2)
+        expect_equal((min(gp1, na.rm = TRUE) + 1e-8) > 0, TRUE)
+        expect_equal((max(gp2, na.rm = TRUE) - 1e-8) < 1, TRUE)        
         
     }
     

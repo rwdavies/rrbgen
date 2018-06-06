@@ -1,8 +1,8 @@
 ## does not need to be the same as STITCH, but convenient
 ## is a way to specify how to spread N samples of nCores coresn
 getSampleRange <- function(
-  N,
-  nCores
+    N,
+    nCores
 ) {
     ## upon closer inspection, this might be slow? oh well
     if (nCores == 1) {
