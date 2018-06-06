@@ -14,7 +14,7 @@ test_that("can use bgenie to generate correct p-values", {
     i_snp <- 4 ## this is the causal SNP
     h2_g <- 0.5 ## approx heritability of SNP
     CompressedSNPBlocks <- 1
-    random_fraction <- 0.05 ## this passes is set to 0
+    random_fraction <- 0 ## bgenie is NOT supported for missing data at this time
     
     set.seed(234)    
     sample_names <- paste0("samp", 1:N)
