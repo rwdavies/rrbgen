@@ -41,40 +41,26 @@ convert_gp_to_list_of_raw <- function(gp, nCores = 1, B_bit_prob = 8) {
     ## nCores here doesn't mean cores
     ## but this is how this will be generated in STITCH
     sampleRange <- getSampleRange(N, nCores)
-    ## 
-    list_of_gp_raw_t <- lapply(1:length(sampleRange), function(i_range) {
-        whoR <- sampleRange[[i_range]]
-        who <- whoR[1]:whoR[2]
-        N2 <- length(who)
-        to_out <- array(as.raw(0), c(2 * N2 * (B_bit_prob / 8), M))
-        return(to_out)
-    })
     ## this part emulates STITCH
-    ##    parallel::mclapply(1:length(sampleRange), mc.cores = 2, function(i_range) {
-    for(i_range in 1:length(sampleRange)) {
-        to_out <- list_of_gp_raw_t[[i_range]]
+    list_of_gp_raw_t <- parallel::mclapply(1:length(sampleRange), mc.cores = nCores, function(i_range) {
         whoR <- sampleRange[[i_range]]
         who <- whoR[1]:whoR[2]
         N2 <- length(who)
+        to_out <- array(as.raw(0), c(2 * N2 * (B_bit_prob / 8), M))        
         ## now fill this in
         for(i_sample in 1:length(who)) {
             ## every SNP for this individual
             gp_t <- t(gp[, who[i_sample], ])
             rcpp_place_gp_t_into_output(
                 gp_t,
-                list_of_gp_raw_t[[i_range]],
+                to_out,
                 i_sample,
                 nSNPs = ncol(gp_t),
                 B_bit_prob
             )
-            ## 
-            ##for(j in 1:(2*(B_bit_prob / 8))) {
-            ##    to_out[2 * (B_bit_prob / 8) * (i_sample - 1) + j, ] <-
-            ##        x[2 * (B_bit_prob / 8) * (1:M - 1) + j]
-           ## }
         }
-        list_of_gp_raw_t[[i_range]] <- to_out
-    }        
+        return(to_out)        
+    })
     return(list_of_gp_raw_t)
 }
 

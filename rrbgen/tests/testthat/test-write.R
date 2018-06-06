@@ -143,7 +143,6 @@ test_that("writing a full bgen file is the same using either gp or list of gp_ra
     ##   library("testthat"); setwd("~/Dropbox/rrbgen/rrbgen/R/"); source("read-functions.R") ;source("write-functions.R"); source("from-stitch.R"); source("test-drivers.R"); library("rrbgen")
 
     set.seed(234)    
-    nCores <- 3
     sample_names <- paste0("samp", 1:40)
     var_info <- make_fake_var_info(100)
     var_ids <- var_info[, "snpid"]
@@ -152,45 +151,47 @@ test_that("writing a full bgen file is the same using either gp or list of gp_ra
     gp <- make_fake_gp(sample_names, var_ids, random_fraction = 0)
     B_bit_prob <- 24
     gp[1, 1, ] <- c(0.985363562311, 0.014634971374, 0.000001466315)
-    
-    for(B_bit_prob in c(8, 16, 24, 32)) {
-        
-        list_of_gp_raw_t <- convert_gp_to_list_of_raw(
-            gp,
-            nCores = nCores,
-            B_bit_prob = B_bit_prob
-        )
 
-        bgen_file_list_of_gp_raw_t <- tempfile()
-        bgen_file_gp <- tempfile()    
-
-        rrbgen_write(
-            bgen_file_gp,
-            gp = gp,
-            sample_names = sample_names,
-            var_info = var_info,
-            CompressedSNPBlocks = CompressedSNPBlocks,
-            B_bit_prob = B_bit_prob
-        )
+    for(nCores in c(1, 4)) {
+        for(B_bit_prob in c(8, 16, 24, 32)) {
         
-        rrbgen_write(
-            bgen_file_list_of_gp_raw_t,
-            sample_names = sample_names,
-            var_info = var_info,
-            list_of_gp_raw_t = list_of_gp_raw_t,        
-            CompressedSNPBlocks = CompressedSNPBlocks,
-            B_bit_prob = B_bit_prob
-        )
-        
-        out_gp <- rrbgen_load(bgen_file_gp)
-        out_list_of_gp_raw_t <- rrbgen_load(bgen_file_list_of_gp_raw_t)
-        
-        expect_equal(out_list_of_gp_raw_t, out_gp)
-        ## floating point numbers don't "have" to be within the bounds
-        ## but rounded in R should
-        expect_equal(0 <= min(round(out_gp$gp)), TRUE)
-        expect_equal(max(round(out_gp$gp)) <= 1, TRUE)        
-
+            list_of_gp_raw_t <- convert_gp_to_list_of_raw(
+                gp,
+                nCores = nCores,
+                B_bit_prob = B_bit_prob
+            )
+            
+            bgen_file_list_of_gp_raw_t <- tempfile()
+            bgen_file_gp <- tempfile()    
+            
+            rrbgen_write(
+                bgen_file_gp,
+                gp = gp,
+                sample_names = sample_names,
+                var_info = var_info,
+                CompressedSNPBlocks = CompressedSNPBlocks,
+                B_bit_prob = B_bit_prob
+            )
+            
+            rrbgen_write(
+                bgen_file_list_of_gp_raw_t,
+                sample_names = sample_names,
+                var_info = var_info,
+                list_of_gp_raw_t = list_of_gp_raw_t,        
+                CompressedSNPBlocks = CompressedSNPBlocks,
+                B_bit_prob = B_bit_prob
+            )
+            
+            out_gp <- rrbgen_load(bgen_file_gp)
+            out_list_of_gp_raw_t <- rrbgen_load(bgen_file_list_of_gp_raw_t)
+            
+            expect_equal(out_list_of_gp_raw_t, out_gp)
+            ## floating point numbers don't "have" to be within the bounds
+            ## but rounded in R should
+            expect_equal(0 <= min(round(out_gp$gp)), TRUE)
+            expect_equal(max(round(out_gp$gp)) <= 1, TRUE)        
+            
+        }
     }
         
 })
