@@ -2,6 +2,8 @@
 
 if (!suppressPackageStartupMessages(require("Rcpp")))
     install.packages("Rcpp", repos="http://cran.rstudio.com/")
+if (!suppressPackageStartupMessages(require("RcppArmadillo")))
+    install.packages("RcppArmadillo", repos="http://cran.rstudio.com/")
 if (!suppressPackageStartupMessages(require("devtools")))
     install.packages("devtools", repos="http://cran.rstudio.com/")
 if (!suppressPackageStartupMessages(require("testthat")))
