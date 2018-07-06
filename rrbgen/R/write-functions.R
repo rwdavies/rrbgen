@@ -269,8 +269,10 @@ prepare_variant_identifying_data_for_all_snps <- function(
     ## 
     per_var_offset <- array(NA, M)
     per_var_offset[1] <- offset + 4
-    for(i_var in 2:M) {
-        per_var_offset[i_var] <- per_var_offset[i_var - 1] + per_var_L_vid[i_var - 1] + per_var_L_gdb[i_var - 1]
+    if (M > 1) {
+        for(i_var in 2:M) {
+            per_var_offset[i_var] <- per_var_offset[i_var - 1] + per_var_L_vid[i_var - 1] + per_var_L_gdb[i_var - 1]
+        }
     }
     return(
         list(
