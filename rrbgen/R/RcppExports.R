@@ -2,13 +2,8 @@
 # Generator token: 10BE3573-1514-4C36-9D1C-5A225CD40393
 
 #' @export
-rcpp_return_same_int <- function(hello) {
-    .Call('_rrbgen_rcpp_return_same_int', PACKAGE = 'rrbgen', hello)
-}
-
-#' @export
-rcpp_make_raw_data_vector_for_probabilities <- function(gp_sub, B_bit_prob = 16L) {
-    .Call('_rrbgen_rcpp_make_raw_data_vector_for_probabilities', PACKAGE = 'rrbgen', gp_sub, B_bit_prob)
+rcpp_make_raw_data_vector_for_probabilities <- function(gp, B_bit_prob = 16L, i_snp_1_based = 1L) {
+    .Call('_rrbgen_rcpp_make_raw_data_vector_for_probabilities', PACKAGE = 'rrbgen', gp, B_bit_prob, i_snp_1_based)
 }
 
 #' @export

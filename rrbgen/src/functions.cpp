@@ -1,18 +1,13 @@
+#include <RcppArmadillo.h>
+
+// [[Rcpp::depends(RcppArmadillo)]]
+
 #include <iostream>
 #include <stdexcept>
 #include <cstdint>
 #include <cmath>
 #include <Rcpp.h>
 using namespace Rcpp;
-
-
-//' @export
-// [[Rcpp::export]]
-int rcpp_return_same_int(const int hello) {
-    // do something here
-    int a = hello;
-    return(a);
-}
 
 
 
@@ -28,11 +23,14 @@ unsigned short get_nybble( std::uint32_t number, const unsigned short part )
 }
 
 
+
+// i_snp is 1-based
 //' @export
 // [[Rcpp::export]]
-Rcpp::RawVector rcpp_make_raw_data_vector_for_probabilities(Rcpp::NumericMatrix& gp_sub, int B_bit_prob = 16)
+Rcpp::RawVector rcpp_make_raw_data_vector_for_probabilities(arma::cube& gp, int B_bit_prob = 16, const int i_snp_1_based = 1)
 {
-  int N = gp_sub.nrow();
+  int i_snp = i_snp_1_based - 1;
+  int N = gp.n_cols; // second now
   int B_bit_prob_divide_8 = (B_bit_prob / 8);
   int B_bit_prob_divide_8_minus_1 = (B_bit_prob_divide_8 - 1);
   std::uint32_t const_2_bit = pow(2, B_bit_prob) - 1;
@@ -47,17 +45,17 @@ Rcpp::RawVector rcpp_make_raw_data_vector_for_probabilities(Rcpp::NumericMatrix&
   short i;
   F_int = 0;    
   for(i_sample =0; i_sample < N; i_sample++) {
-    if (NumericVector::is_na(gp_sub(i_sample, 0))) {
+    if (NumericVector::is_na(gp(i_snp, i_sample, 0))) {
       for(i_col = 0; i_col <= 2; i_col++) {
 	v3[i_col] = 0;
       }
     } else {
       //
-      // need to normalize gp_sub into integers here
+      // need to normalize gp into integers here
       //
       F = 0;
       for(i_col =0; i_col <= 2; i_col++) {    
-	v(i_col) = gp_sub(i_sample, i_col) * const_2_bit;
+	v(i_col) = gp(i_snp, i_sample, i_col) * const_2_bit;
 	v2(i_col) = v(i_col) - floor(v(i_col));
         F = F + v2(i_col);
       }
@@ -85,7 +83,7 @@ Rcpp::RawVector rcpp_make_raw_data_vector_for_probabilities(Rcpp::NumericMatrix&
     }
     //
     // argh this was ugly
-    //std::cout << "i_sample=" << i_sample << "gp_sub[i_sample, ]=" << gp_sub(i_sample, 0) << "," <<  gp_sub(i_sample, 1) << "," << gp_sub(i_sample, 2) << ",F=" << F << ",F_int=" << F_int << ", v=" << v << ", v2=" << v2 << ", v3=" << v3[0] << "," << v3[1] << "," << v3[2] << ",idx=" << idx << std::endl;
+    //std::cout << "i_sample=" << i_sample << "gp[i_sample, ]=" << gp(i_sample, 0) << "," <<  gp(i_sample, 1) << "," << gp(i_sample, 2) << ",F=" << F << ",F_int=" << F_int << ", v=" << v << ", v2=" << v2 << ", v3=" << v3[0] << "," << v3[1] << "," << v3[2] << ",idx=" << idx << std::endl;
     //
     for(i_col =0; i_col < 2; i_col++) {
       std::uint32_t number = v3[i_col];

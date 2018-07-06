@@ -24,6 +24,13 @@ rrbgen_write <- function(
     if (! (B_bit_prob %in% c(8, 16, 24, 32))) {
         stop("For simplicity, rrbgen can only write probabilities using B bits per entry")
     }
+    if (is.null(gp) == FALSE) {
+        if (is.null(sample_names) == FALSE) {
+            if (length(sample_names) != dim(gp)[[2]]) {
+                stop("Incompatible sample names length and gp size")
+            }
+        }
+    }
     ## start with prepratory work
     if (is.null(sample_names) == FALSE) {
         N <- length(sample_names)
@@ -478,8 +485,9 @@ prepare_genotypes_for_one_snp <- function(
         data[4 + 2 + 1 + 1 + N + 1 + 1] <- writeBin(as.integer(B_bit_prob), v, size = 1, endian = "little")
         ## genotype probabilities
         data[non_gp_stuff_length + 1:(2 * N * (B_bit_prob / 8))] <- rcpp_make_raw_data_vector_for_probabilities(
-            gp_sub = gp[i_snp, , ],
-            B_bit_prob = B_bit_prob
+            gp = gp,
+            B_bit_prob = B_bit_prob,
+            i_snp_1_based = i_snp
         )
     } else {
         data[local_offset + 1:N] <- as.raw(2) ## 2 ploidy, no missing
@@ -545,10 +553,11 @@ make_ploidy_raw <- function(missing) {
 ## prob_mat has rows = samples
 ## columns are hom_ref, het, hom_alt
 make_raw_data_vector_for_probabilities <- function(
-   gp_sub,
-   B_bit_prob
+   gp,
+   B_bit_prob,
+   i_snp_1_based
 ) {
-    N <- dim(gp_sub)[[1]]
+    N <- dim(gp)[[2]]
     data_local <- vector(mode = "raw", length = N * (B_bit_prob / 8))
     ## constants
     B_bit_prob_divide_8 <- (B_bit_prob / 8)
@@ -564,10 +573,10 @@ make_raw_data_vector_for_probabilities <- function(
     ## do not change for loops without checking format specifications
     for(i_sample in 1:N) {
         ## get int representatiosn using rule
-        if (is.na(gp_sub[i_sample, 1]))  {
+        if (is.na(gp[i_snp_1_based, i_sample, 1]))  {
             v <- rep(0, 3)
         } else {
-            v <- gp_sub[i_sample, ] * (const_2_bit_minus_1)
+            v <- gp[i_snp_1_based, i_sample, ] * (const_2_bit_minus_1)
             v2 <- v - floor(v)
             F <- as.integer(round(sum(v2)))
             if (F > 0) {

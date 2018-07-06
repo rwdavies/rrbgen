@@ -13,13 +13,17 @@ test_that("writing, reading, then writing is equivalent in R", {
     gp_sub[8, ] <- c(0.4721318,  0.2002350,  0.3276332 )
     gp_sub[9, ] <- c(0.985363562311, 0.014634971374, 0.000001466315)
     N <- 9
+    gp <- array(NA, c(1, 9, 3))
+    gp[1, , ] <- gp_sub    
     is_missing <- array(FALSE, N)
     is_missing[7] <- TRUE    
 
     for(B_bit_prob in c(8, 16, 24, 32)) {
+        
         data_raw_for_probs <- make_raw_data_vector_for_probabilities(
-            gp_sub = gp_sub,
-            B_bit_prob  = B_bit_prob
+            gp = gp,
+            B_bit_prob  = B_bit_prob,
+            i_snp_1_based = 1
         )
         
         gp_written <- convert_raw_probabilities_to_double_probabilities(
@@ -28,10 +32,14 @@ test_that("writing, reading, then writing is equivalent in R", {
             B_bit_prob,
             is_missing
         )
+
+        gp2 <- array(NA, c(1, 9, 3))
+        gp2[1, , ] <- gp_written
         
         data_raw_for_probs2 <- make_raw_data_vector_for_probabilities(
-            gp_sub = gp_written,
-            B_bit_prob  = B_bit_prob
+            gp = gp2,
+            B_bit_prob  = B_bit_prob,
+            i_snp_1_based = 1            
         )
         
         expect_equal(
@@ -59,20 +67,24 @@ test_that("can write matrix of triplet of probabilities to raw vector", {
     gp_sub[8, ] <- c(0.4721318, 0.2002350, 0.3276332)
     gp_sub[9, ] <- c(0.985363562311, 0.014634971374, 0.000001466315)    
     N <- 9
+    gp <- array(NA, c(1, 9, 3))
+    gp[1, , ] <- gp_sub    
     is_missing <- array(FALSE, N)
     is_missing[7] <- TRUE        
     
     for(B_bit_prob in c(8, 16, 24, 32)) {
             
         v <- make_raw_data_vector_for_probabilities(
-            gp_sub = gp_sub,
-            B_bit_prob  = B_bit_prob
+            gp = gp,
+            B_bit_prob  = B_bit_prob,
+            i_snp_1_based = 1
         )
 
         ## convert to work on 
         v2 <- rcpp_make_raw_data_vector_for_probabilities(
-            gp_sub = gp_sub,
-            B_bit_prob  = B_bit_prob
+            gp = gp,
+            B_bit_prob  = B_bit_prob,
+            i_snp_1_based = 1
         )
         
         expect_equal(v, v2)
@@ -94,7 +106,9 @@ test_that("can read raw to form probabilities", {
     gp_sub[6, ] <- c(0.7, 0.1, 0.2)
     gp_sub[7, ] <- c(NA, NA, NA)
     gp_sub[8, ] <- c(0.4721318, 0.2002350, 0.3276332)
-    gp_sub[9, ] <- c(0.985363562311, 0.014634971374, 0.000001466315)        
+    gp_sub[9, ] <- c(0.985363562311, 0.014634971374, 0.000001466315)
+    gp <- array(NA, c(1, 9, 3))
+    gp[1, , ] <- gp_sub
     N <- 9
     is_missing <- array(FALSE, N)
     is_missing[7] <- TRUE
@@ -102,8 +116,9 @@ test_that("can read raw to form probabilities", {
     for(B_bit_prob in c(8, 16, 24, 32)) {
             
         data_raw_for_probs <- make_raw_data_vector_for_probabilities(
-            gp_sub = gp_sub,
-            B_bit_prob  = B_bit_prob
+            gp = gp,
+            B_bit_prob  = B_bit_prob,
+            i_snp = 1
         )
         
         gp1 <- convert_raw_probabilities_to_double_probabilities(

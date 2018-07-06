@@ -14,8 +14,8 @@ make_fake_gp <- function(sample_names, var_ids, random_fraction = 0.05) {
     N <- length(sample_names)
     M <- length(var_ids)
     gp <- array(runif(M * N * 3), c(M, N, 3))
+    dimnames(gp)[[3]] <- c("hom_ref", "het", "hom_alt")    
     dimnames(gp)[[2]] <- sample_names
-    dimnames(gp)[[3]] <- c("hom_ref", "het", "hom_alt")
     dimnames(gp)[[1]] <- var_ids    
     ## now fill with random! include some NAs
     for(i_snp in 1:M) {

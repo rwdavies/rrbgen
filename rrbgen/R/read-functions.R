@@ -106,8 +106,8 @@ rrbgen_load <- function(
         }
     }
     ## add names
+    dimnames(gp)[[3]] <- c("hom_ref", "het", "hom_alt")    
     dimnames(gp)[[2]] <- sample_names
-    dimnames(gp)[[3]] <- c("hom_ref", "het", "hom_alt")
     dimnames(gp)[[1]] <- var_info[, gp_names_col]    
     close(to.read)
     return(
