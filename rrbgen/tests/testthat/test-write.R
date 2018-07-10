@@ -203,3 +203,95 @@ test_that("writing a full bgen file is the same using either gp or list of gp_ra
         
 })
 
+
+test_that("can write to bgen in stages", {
+
+    ##   library("testthat"); setwd("~/Dropbox/rrbgen/rrbgen/R/"); source("read-functions.R") ;source("write-functions.R"); source("from-stitch.R"); source("test-drivers.R"); library("rrbgen")    
+    set.seed(824)    
+    sample_names <- paste0("samp", 1:40)
+    n_snps <- 100
+    var_info <- make_fake_var_info(n_snps)
+    var_ids <- var_info[, "varid"]
+    
+    gp <- make_fake_gp(sample_names, var_ids, random_fraction = 0)
+    B_bit_prob <- 24
+    gp[1, 1, ] <- c(0.985363562311, 0.014634971374, 0.000001466315)
+
+    for(nCores in c(1, 4)) {
+        for(B_bit_prob in c(8, 16, 24, 32)) {
+
+            list_of_gp_raw_t <- convert_gp_to_list_of_raw(
+                gp,
+                nCores = nCores,
+                B_bit_prob = B_bit_prob
+            )
+            
+            bgen_file_full <- tempfile()
+            bgen_file_parts <- tempfile()    
+            
+            ## subset on the fly
+            f <- function(w) {
+                lapply(list_of_gp_raw_t, function(x) x[, w])
+            }
+
+            ## write normally
+            rrbgen_write(
+                bgen_file_full,
+                list_of_gp_raw_t = f(1:100),
+                sample_names = sample_names,
+                var_info = var_info[1:100, ],
+                B_bit_prob = B_bit_prob
+            )
+            
+            ## write first third
+            out <- rrbgen_write(
+                bgen_file_parts,
+                list_of_gp_raw_t = f(1:10),
+                sample_names = sample_names,
+                var_info = var_info[1:10, ],
+                B_bit_prob = B_bit_prob,
+                close_bgen_file = FALSE,
+                header_M = 100
+            )
+            bgen_file_connection <- out$bgen_file_connection
+            previous_offset <- out$final_binary_length
+
+            ## write second half
+            out2 <- rrbgen_write(
+                bgen_file_connection = bgen_file_connection,
+                previous_offset = previous_offset,
+                add_to_bgen_connection = TRUE,
+                close_bgen_file = FALSE,
+                list_of_gp_raw_t = f(11:20),
+                sample_names = sample_names,
+                var_info = var_info[11:20, ],
+                B_bit_prob = B_bit_prob
+            )
+            previous_offset <- out2$final_binary_length
+            
+            ## write third part
+            rrbgen_write(
+                bgen_file_connection = bgen_file_connection,
+                previous_offset = previous_offset,
+                add_to_bgen_connection = TRUE,
+                close_bgen_file = TRUE,
+                list_of_gp_raw_t = f(21:100),
+                sample_names = sample_names,
+                var_info = var_info[21:100, ],
+                B_bit_prob = B_bit_prob
+            )
+
+            out_full <- rrbgen_load(bgen_file_full)
+            out_parts <- rrbgen_load(bgen_file = bgen_file_parts)
+            
+            expect_equal(out_full, out_parts)
+            ## floating point numbers don't "have" to be within the bounds
+            ## but rounded in R should
+            expect_equal(0 <= min(round(out_parts$gp)), TRUE)
+            expect_equal(max(round(out_parts$gp)) <= 1, TRUE)        
+            
+        }
+    }
+        
+})
+

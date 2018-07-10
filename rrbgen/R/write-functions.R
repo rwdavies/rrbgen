@@ -19,7 +19,12 @@ rrbgen_write <- function(
     free = NULL,
     Layout = 2,
     CompressedSNPBlocks = 1,
-    B_bit_prob = 8
+    B_bit_prob = 8,
+    close_bgen_file = TRUE,
+    add_to_bgen_connection = FALSE,
+    bgen_file_connection = NULL,
+    previous_offset = NULL,
+    header_M = NULL
 ) {
     if (! (B_bit_prob %in% c(8, 16, 24, 32))) {
         stop("For simplicity, rrbgen can only write probabilities using B bits per entry")
@@ -78,19 +83,34 @@ rrbgen_write <- function(
         dataC_list <- NULL
     }
     ## open connection
-    to.write <- file(bgen_file, "wb")
+    if (add_to_bgen_connection == FALSE) {
+        to.write <- file(bgen_file, "wb")
+    } else {
+        to.write <- bgen_file_connection
+    }
     ## header - note, could put this lower if prepared header, but need L_H here
-    L_H <- write_bgen_header(
-        to.write,
-        L_SI = L_SI,
-        M = M,
-        N = N,
-        SampleIdentifiers = SampleIdentifiers,
-        Layout = Layout,
-        CompressedSNPBlocks = CompressedSNPBlocks,
-        free = free
-    )
-    offset <- L_H + L_SI    
+    if (add_to_bgen_connection == FALSE) {
+        if (is.null(header_M)) {
+            ## if are adding to file, then need total number of SNPs up front
+            header_M <- M
+        }
+        L_H <- write_bgen_header(
+            to.write,
+            L_SI = L_SI,
+            header_M = header_M,
+            N = N,
+            SampleIdentifiers = SampleIdentifiers,
+            Layout = Layout,
+            CompressedSNPBlocks = CompressedSNPBlocks,
+            free = free
+        )
+        ## 
+        offset <- L_H + L_SI
+    } else {
+        offset <- previous_offset - 4
+        ## since +4 is added later
+        ## not sure this is the cleanest way to do this, this was surprisingly tricky previously
+    }
     ## 
     if (is.null(var_info) == FALSE) {
         var_info_raw_list <- prepare_variant_identifying_data_for_all_snps(
@@ -101,15 +121,18 @@ rrbgen_write <- function(
             per_var_num_K_alleles = per_var_num_K_alleles,
             per_var_C = per_var_C
         )
+        final_binary_length <- var_info_raw_list$final_binary_length
     }
-    ## samples
-    write_bgen_sample_identifier_block(
-        to.write = to.write,
-        L_H = L_H,
-        sample_names_as_raw = sample_names_as_raw,
-        L_Si = L_Si,
-        L_SI = L_SI
-    )
+    if (! add_to_bgen_connection) {
+        ## write samples
+        write_bgen_sample_identifier_block(
+            to.write = to.write,
+            L_H = L_H,
+            sample_names_as_raw = sample_names_as_raw,
+            L_Si = L_Si,
+            L_SI = L_SI
+        )
+    }
     if (is.null(var_info) == FALSE) {
         ## note - gp irrelevant at this point, effectively stored in var_info_raw_list
         write_variant_identifying_data_and_genotypes_for_all_snps(
@@ -127,14 +150,24 @@ rrbgen_write <- function(
         )
     }
     ## done writing
-    close(to.write)
-    return(NULL)
+    if (close_bgen_file) {
+        close(to.write)
+        return(NULL)        
+    } else {
+        ## what do I need?
+        return(
+            list(
+                bgen_file_connection = to.write,
+                final_binary_length = final_binary_length
+            )
+        )
+    }
 }
 
 write_bgen_header <- function(
     to.write,
     L_SI,
-    M,
+    header_M,
     N,
     SampleIdentifiers = 1,
     Layout = 2,
@@ -152,8 +185,8 @@ write_bgen_header <- function(
         stop(paste0("SampleIdentifiers must be either 0 or 1 but you have selected:", SampleIdentifiers))
     }
     ## probably not necessary as this is under my control, but just in case
-    if ((M < 0) | (round(M) != M)) {
-        stop(paste0("The number of SNPs M must be an integer but you have selected:", M))
+    if ((header_M < 0) | (round(header_M) != header_M)) {
+        stop(paste0("The number of SNPs M must be an integer but you have selected:", header_M))
     }
     if ((N < 0) | (round(N) != N)) {
         stop(paste0("The number of samples N must be an integer but you have selected:", N))
@@ -173,7 +206,7 @@ write_bgen_header <- function(
     offset <- L_H + L_SI    
     writeBin(as.integer(offset), to.write, endian = "little")
     writeBin(as.integer(L_H), to.write, endian = "little")    
-    writeBin(as.integer(M), to.write, endian = "little")
+    writeBin(as.integer(header_M), to.write, endian = "little")
     writeBin(as.integer(N), to.write, endian = "little")
     magic_raw <- as.raw(sapply(c("b", "g", "e", "n"), function(x) charToRaw(x)))    
     writeBin(magic_raw, to.write, size = 1, endian = "little")
@@ -281,6 +314,7 @@ prepare_variant_identifying_data_for_all_snps <- function(
             per_var_offset[i_var] <- per_var_offset[i_var - 1] + per_var_L_vid[i_var - 1] + per_var_L_gdb[i_var - 1]
         }
     }
+    final_binary_length <- per_var_offset[M] + per_var_L_vid[M] + per_var_L_gdb[M]
     return(
         list(
             per_var_varid_raw = per_var_varid_raw,
@@ -291,7 +325,8 @@ prepare_variant_identifying_data_for_all_snps <- function(
             per_var_alt_allele_raw = per_var_alt_allele_raw,
             per_var_offset = per_var_offset,
             per_var_L_vid = per_var_L_vid,
-            per_var_L_gdb = per_var_L_gdb
+            per_var_L_gdb = per_var_L_gdb,
+            final_binary_length = final_binary_length
         )
     )
 }
@@ -346,7 +381,11 @@ write_variant_identifying_data_and_genotypes_for_all_snps <- function(
             writeBin(dataC_list[[i_var]], to.write, size = 1, endian = "little")
         }
     }
-    return(NULL)
+    return(
+        list(
+            per_var_offset = per_var_offset
+        )
+    )
 }
 
 
