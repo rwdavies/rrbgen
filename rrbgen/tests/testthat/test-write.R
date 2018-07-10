@@ -242,16 +242,28 @@ test_that("can write to bgen in stages", {
                 var_info = var_info[1:100, ],
                 B_bit_prob = B_bit_prob
             )
-            
-            ## write first third
+
+            ## write header
             out <- rrbgen_write(
                 bgen_file_parts,
-                list_of_gp_raw_t = f(1:10),
                 sample_names = sample_names,
-                var_info = var_info[1:10, ],
                 B_bit_prob = B_bit_prob,
                 close_bgen_file = FALSE,
                 header_M = 100
+            )
+            bgen_file_connection <- out$bgen_file_connection
+            previous_offset <- out$final_binary_length
+            
+            ## write first third
+            out <- rrbgen_write(
+                bgen_file_connection = bgen_file_connection,
+                previous_offset = previous_offset,
+                add_to_bgen_connection = TRUE,
+                close_bgen_file = FALSE,
+                list_of_gp_raw_t = f(1:10),
+                sample_names = sample_names,
+                var_info = var_info[1:10, ],
+                B_bit_prob = B_bit_prob
             )
             bgen_file_connection <- out$bgen_file_connection
             previous_offset <- out$final_binary_length

@@ -122,6 +122,8 @@ rrbgen_write <- function(
             per_var_C = per_var_C
         )
         final_binary_length <- var_info_raw_list$final_binary_length
+    } else {
+        final_binary_length <- offset + 4
     }
     if (! add_to_bgen_connection) {
         ## write samples
