@@ -1,7 +1,7 @@
 rrbgen
 ======
-**__Current Version: 0.0.2__**
-Release date: July 6, 2018
+**__Current Version: 0.0.3__**
+Release date: July 11, 2018
 
 Robbie's lightweight limited functionality R bgen read/write library
 
@@ -15,7 +15,7 @@ This library supports "v1.3" of bgen defined [here](http://www.well.ox.ac.uk/~ga
 git clone --recursive https://github.com/rwdavies/rrbgen.git
 cd rrbgen
 ./scripts/install-r-dependencies.R
-R CMD INSTALL ./releases/rrbgen_0.0.2.tar.gz
+R CMD INSTALL ./releases/rrbgen_0.0.3.tar.gz
 ```
 
 ### Example commands in R

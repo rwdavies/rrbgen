@@ -1,3 +1,5 @@
+* v0.0.3
+	* Allow writing files in stages
 * v0.0.2
 	* Allow writing files with only 1 SNP and 1 sample. Am now using RcppArmadillo to pass in cubes natively
 * v0.0.1
