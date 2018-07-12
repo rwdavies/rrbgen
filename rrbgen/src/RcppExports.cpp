@@ -47,11 +47,30 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// rcpp_build_giant_output_vector
+Rcpp::RawVector rcpp_build_giant_output_vector(const Rcpp::IntegerVector& per_var_L_vid, const Rcpp::IntegerVector& per_var_L_gdb, const int Layout, const int CompressedSNPBlocks, const Rcpp::List& binary_vid_list, const Rcpp::List& binary_gpd_list, const Rcpp::RawVector& per_var_C_raw, const Rcpp::RawVector& per_var_D_raw);
+RcppExport SEXP _rrbgen_rcpp_build_giant_output_vector(SEXP per_var_L_vidSEXP, SEXP per_var_L_gdbSEXP, SEXP LayoutSEXP, SEXP CompressedSNPBlocksSEXP, SEXP binary_vid_listSEXP, SEXP binary_gpd_listSEXP, SEXP per_var_C_rawSEXP, SEXP per_var_D_rawSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const Rcpp::IntegerVector& >::type per_var_L_vid(per_var_L_vidSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::IntegerVector& >::type per_var_L_gdb(per_var_L_gdbSEXP);
+    Rcpp::traits::input_parameter< const int >::type Layout(LayoutSEXP);
+    Rcpp::traits::input_parameter< const int >::type CompressedSNPBlocks(CompressedSNPBlocksSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::List& >::type binary_vid_list(binary_vid_listSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::List& >::type binary_gpd_list(binary_gpd_listSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::RawVector& >::type per_var_C_raw(per_var_C_rawSEXP);
+    Rcpp::traits::input_parameter< const Rcpp::RawVector& >::type per_var_D_raw(per_var_D_rawSEXP);
+    rcpp_result_gen = Rcpp::wrap(rcpp_build_giant_output_vector(per_var_L_vid, per_var_L_gdb, Layout, CompressedSNPBlocks, binary_vid_list, binary_gpd_list, per_var_C_raw, per_var_D_raw));
+    return rcpp_result_gen;
+END_RCPP
+}
 
 static const R_CallMethodDef CallEntries[] = {
     {"_rrbgen_rcpp_make_raw_data_vector_for_probabilities", (DL_FUNC) &_rrbgen_rcpp_make_raw_data_vector_for_probabilities, 3},
     {"_rrbgen_rcpp_place_gp_t_into_output", (DL_FUNC) &_rrbgen_rcpp_place_gp_t_into_output, 5},
     {"_rrbgen_rcpp_convert_raw_probabilities_to_double_probabilities", (DL_FUNC) &_rrbgen_rcpp_convert_raw_probabilities_to_double_probabilities, 4},
+    {"_rrbgen_rcpp_build_giant_output_vector", (DL_FUNC) &_rrbgen_rcpp_build_giant_output_vector, 8},
     {NULL, NULL, 0}
 };
 

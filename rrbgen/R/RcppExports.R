@@ -16,3 +16,8 @@ rcpp_convert_raw_probabilities_to_double_probabilities <- function(data_raw_for_
     .Call('_rrbgen_rcpp_convert_raw_probabilities_to_double_probabilities', PACKAGE = 'rrbgen', data_raw_for_probs, N, B_bit_prob, is_missing)
 }
 
+#' @export
+rcpp_build_giant_output_vector <- function(per_var_L_vid, per_var_L_gdb, Layout, CompressedSNPBlocks, binary_vid_list, binary_gpd_list, per_var_C_raw, per_var_D_raw) {
+    .Call('_rrbgen_rcpp_build_giant_output_vector', PACKAGE = 'rrbgen', per_var_L_vid, per_var_L_gdb, Layout, CompressedSNPBlocks, binary_vid_list, binary_gpd_list, per_var_C_raw, per_var_D_raw)
+}
+

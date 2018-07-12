@@ -235,4 +235,67 @@ Rcpp::NumericMatrix rcpp_convert_raw_probabilities_to_double_probabilities(const
 
 
 
+//' @export
+// [[Rcpp::export]]
+Rcpp::RawVector rcpp_build_giant_output_vector(
+    const Rcpp::IntegerVector& per_var_L_vid,
+    const Rcpp::IntegerVector& per_var_L_gdb,
+    const int Layout,
+    const int CompressedSNPBlocks,
+    const Rcpp::List & binary_vid_list,
+    const Rcpp::List & binary_gpd_list,
+    const Rcpp::RawVector& per_var_C_raw,
+    const Rcpp::RawVector& per_var_D_raw
+) {
+  int M = per_var_L_vid.size();
+  Rcpp::RawVector giant_output_vector(Rcpp::sum(per_var_L_vid) + Rcpp::sum(per_var_L_gdb));
+
+  int vector_offset = 0;
+  int subtract = 4;
   
+  if ((Layout == 2) & ( (CompressedSNPBlocks > 0))) {
+    subtract = subtract + 4;
+  }
+
+  Rcpp::RawVector binary_vid, binary_gpd;
+  int i_var, len, j;
+
+  for(i_var = 0; i_var < M; i_var++) {
+    
+    // variant identifying data
+    binary_vid = binary_vid_list(i_var);
+    len = per_var_L_vid(i_var);
+    for(j=0; j < len; j++) {
+      giant_output_vector(vector_offset + j) = binary_vid(j);
+    }
+    vector_offset = vector_offset + len;
+    
+    // genotype data block
+    for(j=0; j < 4; j++) {
+      giant_output_vector(vector_offset + j) = per_var_C_raw(4 * (i_var) + j);
+    }
+    // now, also write C and D, from the Genotype Data block
+    if ((Layout == 2) & ((CompressedSNPBlocks > 0))) {
+      for(j=0; j < 4; j++) {
+	giant_output_vector(vector_offset + 4 + j) = per_var_D_raw(4 * (i_var) + j);
+      }
+    }
+
+    // write genotype data block
+    len = per_var_L_gdb(i_var) - subtract;
+    if (len > 0) {
+      binary_gpd = binary_gpd_list(i_var);
+      for(j=0; j < len; j++) {
+	giant_output_vector(vector_offset + subtract + j) = binary_gpd(j) ;
+      }
+      vector_offset = vector_offset + len + subtract;      
+    } else {
+      vector_offset = vector_offset + subtract;
+    }
+      
+  }
+  
+  
+  return giant_output_vector;
+}
+

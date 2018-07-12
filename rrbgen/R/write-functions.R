@@ -14,6 +14,7 @@
 #' @param previous_offset Previous length of open bgen file +4
 #' @param header_M How many SNPs to specify in the header
 #' @param nCores How many cores to use for compression
+#' @param verbose Whether to print logging information when writing
 #' @author Robert Davies
 #' @export
 rrbgen_write <- function(
@@ -31,7 +32,8 @@ rrbgen_write <- function(
     bgen_file_connection = NULL,
     previous_offset = NULL,
     header_M = NULL,
-    nCores = 1
+    nCores = 1,
+    verbose = FALSE
 ) {
     if (! (B_bit_prob %in% c(8, 16, 24, 32))) {
         stop("For simplicity, rrbgen can only write probabilities using B bits per entry")
@@ -73,7 +75,8 @@ rrbgen_write <- function(
             CompressedSNPBlocks = CompressedSNPBlocks,
             B_bit_prob = B_bit_prob,
             per_var_num_K_alleles = per_var_num_K_alleles,
-            nCores = nCores
+            nCores = nCores,
+            verbose = verbose
         )
         per_var_C <- out$per_var_C
         per_var_D <- out$per_var_D
@@ -127,7 +130,8 @@ rrbgen_write <- function(
             Layout = Layout,
             CompressedSNPBlocks = CompressedSNPBlocks,
             per_var_num_K_alleles = per_var_num_K_alleles,
-            per_var_C = per_var_C
+            per_var_C = per_var_C,
+            verbose = verbose
         )
         binary_vid_list <- out$binary_vid_list
         per_var_L_vid <- out$per_var_L_vid
@@ -158,7 +162,8 @@ rrbgen_write <- function(
             binary_vid_list = binary_vid_list,
             binary_gpd_list = binary_gpd_list,
             Layout = Layout,
-            CompressedSNPBlocks = CompressedSNPBlocks
+            CompressedSNPBlocks = CompressedSNPBlocks,
+            verbose = verbose
         )
     }
     ## done writing
@@ -288,8 +293,12 @@ prepare_variant_identifying_data_for_all_snps <- function(
     Layout,
     CompressedSNPBlocks,
     per_var_num_K_alleles,
-    per_var_C
+    per_var_C,
+    verbose = FALSE
 ) {
+    if (verbose) {
+        print_message("Begin preparing vid")
+    }
     ##
     M <- nrow(var_info)    
     per_var_varid_raw <- lapply(var_info[, "varid"], charToRaw)
@@ -346,6 +355,9 @@ prepare_variant_identifying_data_for_all_snps <- function(
     ##
     final_binary_length <- per_var_offset[M] + per_var_L_vid[M] + per_var_L_gdb[M]
     ##
+    if (verbose) {
+        print_message("Done vid")
+    }
     return(
         list(
             binary_vid_list = binary_vid_list,
@@ -367,12 +379,53 @@ write_variant_identifying_data_and_genotypes_for_all_snps <- function(
     binary_vid_list,
     binary_gpd_list,
     Layout,
-    CompressedSNPBlocks
+    CompressedSNPBlocks,
+    verbose
 ) {
-    ##
+    if (verbose) {
+        print_message("Begin writing")
+        print_message("Build output vector")        
+    }
+    v <- vector(mode = "raw", length = 4)
+    per_var_C_raw <- writeBin(as.integer(per_var_C), v, size = 4, endian = "little")
+    per_var_D_raw <- writeBin(as.integer(per_var_D), v, size = 4, endian = "little")    
+    giant_output_vector <- rcpp_build_giant_output_vector(
+        per_var_L_vid = per_var_L_vid,
+        per_var_L_gdb = per_var_L_gdb,
+        Layout = Layout,
+        CompressedSNPBlocks = CompressedSNPBlocks,
+        binary_vid_list = binary_vid_list,
+        binary_gpd_list = binary_gpd_list,
+        per_var_C_raw = per_var_C_raw,
+        per_var_D_raw = per_var_D_raw
+    )
+    if (verbose) {
+        print_message("Write output vector to disk")
+    }
+    seek(to.write, where = offset + 4)
+    ## one giant write!
+    writeBin(giant_output_vector, to.write, size = 1, endian = "little")
+    if (verbose) {
+        print_message("Done writing output vector to disk")
+    }
+    return(NULL)
+}
+
+
+build_giant_output_vector <- function(
+    per_var_L_vid,
+    per_var_L_gdb,
+    Layout,
+    CompressedSNPBlocks,
+    binary_vid_list,
+    binary_gpd_list,
+    per_var_C_raw,
+    per_var_D_raw
+) {
     M <- length(per_var_L_vid)
     v <- vector(mode = "raw", length = 4)
-    giant_output_vector <- vector(mode = "raw", length = sum(per_var_L_vid) + sum(per_var_L_gdb))
+    length <- sum(per_var_L_vid) + sum(per_var_L_gdb)
+    giant_output_vector <- vector(mode = "raw", length = length)
     vector_offset <- 0
     subtract <- 4
     if ((Layout == 2) & ( (CompressedSNPBlocks > 0))) {
@@ -384,10 +437,10 @@ write_variant_identifying_data_and_genotypes_for_all_snps <- function(
         giant_output_vector[vector_offset + 1:len] <- binary_vid_list[[i_var]]
         vector_offset <- vector_offset + len
         ## genotype data block
-        giant_output_vector[vector_offset + 1:4] <- writeBin(as.integer(per_var_C[i_var]), v, size = 4, endian = "little")
+        giant_output_vector[vector_offset + 1:4] <- per_var_C_raw[4 * (i_var - 1) + 1:4]
         ## now, also write C and D, from the Genotype Data block
-        if ((Layout == 2) & ( (CompressedSNPBlocks > 0))) {
-            giant_output_vector[vector_offset + 4 + 1:4] <- writeBin(as.integer(per_var_D[i_var]), v, size = 4, endian = "little")
+        if ((Layout == 2) & ((CompressedSNPBlocks > 0))) {
+            giant_output_vector[vector_offset + 4 + 1:4] <- per_var_D_raw[4 * (i_var - 1) + 1:4]
         }
         ## write genotype data block
         len <- per_var_L_gdb[i_var] - subtract
@@ -398,12 +451,11 @@ write_variant_identifying_data_and_genotypes_for_all_snps <- function(
             vector_offset <- vector_offset + subtract
         }
     }
-    seek(to.write, where = offset + 4)
-    ## one giant write!
-    writeBin(giant_output_vector, to.write, size = 1, endian = "little")
-    return(NULL)
+    if (length(giant_output_vector) != length) {
+        stop("bad pre-allocation!")
+    }
+    return(giant_output_vector)
 }
-
 
 
 
@@ -479,8 +531,12 @@ prepare_genotypes_for_all_snps <- function(
     CompressedSNPBlocks,
     B_bit_prob,
     per_var_num_K_alleles,
-    nCores = 1
+    nCores = 1,
+    verbose = FALSE
 ) {
+    if (verbose) {
+        print_message("Begin preparing genotypes for all SNPs")
+    }
     if ((as.integer(is.null(gp)) + as.integer(is.null(list_of_gp_raw_t))) != 1) {
         stop("Please write using either one of gp or list_of_gp_raw_t")
     }
@@ -499,12 +555,17 @@ prepare_genotypes_for_all_snps <- function(
         N = N,
         per_var_num_K_alleles = per_var_num_K_alleles
     )
-    ## unlist
+    if (verbose) {
+        print_message("Re-shape output")
+    }
     for(i_snp in 1:M) {
         per_var_C[i_snp] <- out[[i_snp]]$C
         per_var_D[i_snp] <- out[[i_snp]]$D
         ##  data_list[[i_snp]] <- out[[i_snp]]$data
         binary_gpd_list[[i_snp]] <- out[[i_snp]]$gpd
+    }
+    if (verbose) {
+        print_message("Done preparing genotypes for all SNPs")
     }
     return(
         list(
@@ -713,3 +774,12 @@ robbie_intTobits <- function(x, B_bit_prob) {
 ##        2 ** iB## was here
 ##    }
 ## }
+
+
+print_message <- function(x) {
+    message(
+        paste0(
+            "[", format(Sys.time(), "%Y-%m-%d %H:%M:%S"), "] ", x
+        )
+    )
+}
