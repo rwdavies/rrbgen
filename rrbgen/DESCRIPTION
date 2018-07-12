@@ -6,7 +6,7 @@ Date: 2018-07-11
 Author: Robert William Davies
 Maintainer: Robert William Davies <robertwilliamdavies@gmail.com>
 Description: A lightweight R bgen library with limited functionality 
-Imports: Rcpp, RcppArmadillo
+Imports: Rcpp, RcppArmadillo, parallel
 LinkingTo: Rcpp, RcppArmadillo
 License: GPL | file LICENSE
 SystemRequirements: C++11

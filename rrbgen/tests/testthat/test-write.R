@@ -93,38 +93,42 @@ test_that("can write a full bgen file", {
 
     for(N in c(4, 1)) {
         for(M in c(8, 1)) {
+            for(nCores in c(1, 4)) {
 
-            var_info <- make_fake_var_info(M)
-            var_ids <- var_info[, "varid"]
+                var_info <- make_fake_var_info(M)
+                var_ids <- var_info[, "varid"]
+                
+                set.seed(100)
+                gp <- make_fake_gp(sample_names[1:N], var_ids, random_fraction = 0.05)
+                
+                bgen_file <- tempfile()
+                
+                for(B_bit_prob in c(8, 16, 24, 32)) {    
+                    
+                    rrbgen_write(
+                        bgen_file,
+                        sample_names = sample_names[1:N],
+                        var_info = var_info,
+                        gp = gp,
+                        CompressedSNPBlocks = CompressedSNPBlocks,
+                        B_bit_prob = B_bit_prob,
+                        nCores = nCores
+                    )
+                
+                    out <- rrbgen_load(bgen_file)
+                    loaded_gp <- out$gp
+                    
+                    expect_equal(dimnames(gp)[[1]], dimnames(loaded_gp)[[1]])
+                    expect_equal(dimnames(gp)[[2]], as.character(dimnames(loaded_gp)[[2]])) ## argh
+                    expect_equal(dimnames(gp)[[3]], dimnames(loaded_gp)[[3]])
+                    tolerance <- acceptable_tolerance(B_bit_prob) 
+                    
+                    expect_equal(sum(abs(gp - loaded_gp) > tolerance, na.rm = TRUE), 0)
+                    
+                    expect_equal(as.logical(is.na(gp) ), as.logical(is.na(loaded_gp)))
+                    
+                }
 
-            set.seed(100)
-            gp <- make_fake_gp(sample_names[1:N], var_ids, random_fraction = 0.05)
-            
-            bgen_file <- tempfile()
-            
-            for(B_bit_prob in c(8, 16, 24, 32)) {    
-                
-                rrbgen_write(
-                    bgen_file,
-                    sample_names = sample_names[1:N],
-                    var_info = var_info,
-                    gp = gp,
-                    CompressedSNPBlocks = CompressedSNPBlocks,
-                    B_bit_prob = B_bit_prob
-                )
-                
-                out <- rrbgen_load(bgen_file)
-                loaded_gp <- out$gp
-
-                expect_equal(dimnames(gp)[[1]], dimnames(loaded_gp)[[1]])
-                expect_equal(dimnames(gp)[[2]], as.character(dimnames(loaded_gp)[[2]])) ## argh
-                expect_equal(dimnames(gp)[[3]], dimnames(loaded_gp)[[3]])
-                tolerance <- acceptable_tolerance(B_bit_prob) 
-                
-                expect_equal(sum(abs(gp - loaded_gp) > tolerance, na.rm = TRUE), 0)
-                
-                expect_equal(as.logical(is.na(gp) ), as.logical(is.na(loaded_gp)))
-                
             }
         }
 

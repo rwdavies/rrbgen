@@ -8,6 +8,12 @@
 #' @param Layout Only supported 2 (see bgen spec)
 #' @param CompressedSNPBlocks Only supported 1. Whether to (1) or not to (0) compress genotype probabilities
 #' @param B_bit_prob How many bits to use to encode genotype probabilities (only supported 8, 16, 24, 32)
+#' @param close_bgen_file Whether to close bgen file once this function has completed
+#' @param add_to_bgen_connection Whether to add to previous bgen file connection
+#' @param bgen_file_connection Previous bgen file connection for file to add to
+#' @param previous_offset Previous length of open bgen file +4
+#' @param header_M How many SNPs to specify in the header
+#' @param nCores How many cores to use for compression
 #' @author Robert Davies
 #' @export
 rrbgen_write <- function(
@@ -24,7 +30,8 @@ rrbgen_write <- function(
     add_to_bgen_connection = FALSE,
     bgen_file_connection = NULL,
     previous_offset = NULL,
-    header_M = NULL
+    header_M = NULL,
+    nCores = 1
 ) {
     if (! (B_bit_prob %in% c(8, 16, 24, 32))) {
         stop("For simplicity, rrbgen can only write probabilities using B bits per entry")
@@ -65,7 +72,8 @@ rrbgen_write <- function(
             N = N,
             CompressedSNPBlocks = CompressedSNPBlocks,
             B_bit_prob = B_bit_prob,
-            per_var_num_K_alleles = per_var_num_K_alleles
+            per_var_num_K_alleles = per_var_num_K_alleles,
+            nCores = nCores
         )
         per_var_C <- out$per_var_C
         per_var_D <- out$per_var_D
@@ -451,7 +459,8 @@ prepare_genotypes_for_all_snps <- function(
     N,
     CompressedSNPBlocks,
     B_bit_prob,
-    per_var_num_K_alleles
+    per_var_num_K_alleles,
+    nCores = 1
 ) {
     if ((as.integer(is.null(gp)) + as.integer(is.null(list_of_gp_raw_t))) != 1) {
         stop("Please write using either one of gp or list_of_gp_raw_t")
@@ -460,21 +469,24 @@ prepare_genotypes_for_all_snps <- function(
     per_var_C <- array(0, M)
     per_var_D <- array(0, M)
     data_list <- as.list(1:M)
-    dataC_list <- as.list(1:M)    
+    dataC_list <- as.list(1:M)
+    out <- parallel::mclapply(
+        1:M,
+        mc.cores = nCores,
+        FUN = prepare_genotypes_for_one_snp,
+        gp = gp,
+        list_of_gp_raw_t = list_of_gp_raw_t,
+        CompressedSNPBlocks = CompressedSNPBlocks,
+        B_bit_prob = B_bit_prob,
+        N = N,
+        per_var_num_K_alleles = per_var_num_K_alleles
+    )
+    ## unlist
     for(i_snp in 1:M) {
-        out <- prepare_genotypes_for_one_snp(
-            gp = gp,
-            list_of_gp_raw_t = list_of_gp_raw_t,
-            i_snp = i_snp,
-            CompressedSNPBlocks = CompressedSNPBlocks,
-            B_bit_prob = B_bit_prob,
-            N = N,
-            num_K_alleles = per_var_num_K_alleles[i_snp]
-        )
-        per_var_C[i_snp] <- out$C
-        per_var_D[i_snp] <- out$D
-        data_list[[i_snp]] <- out$data
-        dataC_list[[i_snp]] <- out$dataC
+        per_var_C[i_snp] <- out[[i_snp]]$C
+        per_var_D[i_snp] <- out[[i_snp]]$D
+        data_list[[i_snp]] <- out[[i_snp]]$data
+        dataC_list[[i_snp]] <- out[[i_snp]]$dataC
     }
     return(
         list(
@@ -491,14 +503,15 @@ prepare_genotypes_for_all_snps <- function(
 ## note this does not include variables C or D
 ## those are considered part of variant ID block
 prepare_genotypes_for_one_snp <- function(
+    i_snp,                                          
     gp = NULL,
     list_of_gp_raw_t = NULL,
-    i_snp,
     CompressedSNPBlocks,
     B_bit_prob,
     N,
-    num_K_alleles
+    per_var_num_K_alleles
 ) {
+    num_K_alleles <- per_var_num_K_alleles[i_snp]    
     ## make whole store here
     v <- vector(mode = "raw")            
     non_gp_stuff_length <- 4 + 2 + 1 + 1 + N + 1 + 1
