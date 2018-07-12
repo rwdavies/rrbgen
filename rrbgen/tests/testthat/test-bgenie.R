@@ -1,13 +1,21 @@
 bgenie_command <- "bgenie_v1.3_static1"
 skip_bgenie_tests <- Sys.which("bgenie_v1.3_static1") == ""
 
+if (1 == 0) {
+    
+    dir <- "/data/smew1/rdavies/rrbgen/rrbgen/R/"
+    ##dir <- "~/personal/proj/rrbgen/rrbgen/R/"
+    setwd(dir)
+    library("testthat");    source("read-functions.R") ;source("write-functions.R"); source("test-drivers.R"); source("from-stitch.R"); library("rrbgen")
+
+}
+
+
 test_that("can use bgenie to generate correct p-values", {
 
     if (skip_bgenie_tests) {
         skip("bgenie not in path")
     }
-
-    ##     library("testthat"); setwd("~/personal/proj/rrbgen/rrbgen/R/"); source("read-functions.R") ;source("write-functions.R"); source("test-drivers.R"); source("from-stitch.R"); library("rrbgen")
 
     N <- 100
     M <- 10
@@ -19,7 +27,7 @@ test_that("can use bgenie to generate correct p-values", {
     set.seed(234)    
     sample_names <- paste0("samp", 1:N)
     var_info <- make_fake_var_info(M)
-    var_ids <- var_info[, "snpid"]
+    var_ids <- var_info[, "varid"]
     
     gp <- make_fake_gp(sample_names, var_ids, random_fraction = random_fraction)
     out <- make_fake_pheno_file(gp, i_snp = i_snp, h2_g = h2_g)
