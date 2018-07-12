@@ -14,43 +14,60 @@ for(key in c("--file=", "--f=")) {
 }
 
 
-setwd("~/Dropbox/rrbgen/rrbgen/R/"); source("read-functions.R") ;source("write-functions.R"); source("test-drivers.R");setwd("~/Dropbox/rrbgen/")
+setwd("~/Dropbox/rrbgen/rrbgen/R/")
+source("read-functions.R")
+source("write-functions.R")
+source("test-drivers.R")
+source("from-stitch.R")
+setwd("~/Dropbox/rrbgen/")
 
 
+nCores <- 1
+CompressedSNPBlocks <- 1
+B_bit_prob <- 16
 
+
+## make really big file
+sample_data_file <- "~/Downloads/profile_data.RData"
+file <- tempfile()
+if (file.exists(sample_data_file) == FALSE) {
+    print_message("Prepare sample data")
+    M <- 10000
+    N <- 2000
+    sample_names <- paste0("samp", 1:N)
+    var_info <- make_fake_var_info(M)
+    var_ids <- var_info[, "varid"]
+    gp <- make_fake_gp(sample_names, var_ids, random_fraction = 0)
+    list_of_gp_raw_t <- convert_gp_to_list_of_raw(
+        gp,
+        nCores = nCores,
+        B_bit_prob = B_bit_prob
+    )
+    save(list_of_gp_raw_t, var_info, sample_names, file = sample_data_file)
+} else {
+    load(sample_data_file)
+}
+
+print_message("begin profile ")
 profout <- tempfile()
 Rprof(file = profout, gc.profiling = TRUE, line.profiling = TRUE)
 
-## what to profile
-message(date())
-external_bgen_dir <- "./external/bgen/"
-bit <- 16
-external_bgen_file <- file.path(external_bgen_dir, paste0("example.", bit, "bits.bgen"))
-message(paste0(date(), ":Start"))
-for(i in 1:5) {
-    message(paste0(date(), ": Load"))
-    out <- rrbgen_load(external_bgen_file)
-    message(paste0(date(), ": Write"))
-    ## now write as well!
-    gp <- out$gp
-    sample_names <- out$sample_names
-    var_info <- out$var_info
-    CompressedSNPBlocks <- 1
-    bgen_file <- tempfile()
-    B_bit_prob <- 16
-    rrbgen_write(
-        bgen_file,
-        sample_names = sample_names,
-        var_info = var_info,
-        gp = gp,
-        CompressedSNPBlocks = CompressedSNPBlocks,
-        B_bit_prob = B_bit_prob
-    )
-}
-message(paste0(date(), ":Done"))
-## end of what to profile
-
+########################### profile this
+rrbgen_write(
+    bgen_file = tempfile(),
+    sample_names = sample_names,
+    var_info = var_info,
+    list_of_gp_raw_t = list_of_gp_raw_t,
+    CompressedSNPBlocks = CompressedSNPBlocks,
+    B_bit_prob = B_bit_prob,
+    verbose = TRUE,
+    nCores = 1
+)
+########################### end of what to profile
 Rprof(NULL)
+print_message("end profile")
+
+
 pd <- readProfileData(profout)
 title <- Sys.getenv("TITLE")
 
