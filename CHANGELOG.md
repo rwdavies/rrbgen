@@ -1,3 +1,6 @@
+* v0.0.4
+	* More efficient writing
+	* Supported multi-core compression (argument nCores)
 * v0.0.3
 	* Allow writing files in stages
 * v0.0.2
