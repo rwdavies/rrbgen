@@ -17,6 +17,12 @@ cd rrbgen
 ./scripts/install-r-dependencies.R
 R CMD INSTALL ./releases/rrbgen_0.0.4.tar.gz
 ```
+If you see errors like "error while loading shared libraries: libmpc.so.2: cannot open shared object file: No such file or directory", then please run the following before the R CMD INSTALL
+```
+./scripts/install-package-dependencies.sh
+export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:`pwd`/install/lib/
+```
+If you have any other installation problems or suggestions please report them as a github issue.
 
 ### Example commands in R
 ```
