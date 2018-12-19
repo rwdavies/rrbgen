@@ -3,7 +3,7 @@ rrbgen
 **__Current Version: 0.0.4__**
 Release date: July 13, 2018
 
-Robbie's lightweight limited functionality R bgen read/write library
+A lightweight limited functionality R bgen read/write library
 
 [![Build Status](https://travis-ci.org/rwdavies/rrbgen.svg)](https://travis-ci.org/rwdavies/rrbgen)
 
