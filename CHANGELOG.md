@@ -1,3 +1,5 @@
+* v0.0.5
+	* Skip some tests when external data not present
 * v0.0.4
 	* More efficient writing
 	* Supported multi-core compression (argument nCores)

@@ -15,9 +15,21 @@ sample <- read.table(sample_file, sep = " ")
 sample_ids_from_sample_file <- as.character(sample[-c(1:2), ])
 
 
+## check for files, if they do not exist, do not run these tests
+## these tests are meant to be run with external data
+skip_if_no_files <- function() {
+    for(file in external_bgen_files) {
+        if (file.exists(file) == FALSE) {
+            skip("External files not available")
+        }
+    }
+}
+
 
 test_that("can test things", {
 
+    skip_if_no_files()
+    
     ##
     ## library("testthat"); setwd("~/Dropbox/rrbgen/rrbgen/R/"); source("read-functions.R") ;source("write-functions.R"); source("test-drivers.R");  setwd("~/Dropbox/rrbgen/rrbgen/tests/testthat")    ;      close(to.read); library("rrbgen")
     to.read <- file(external_bgen_files["16"], "rb")
@@ -90,6 +102,8 @@ test_that("can test things", {
 
 test_that("can load sample names", {
     
+    skip_if_no_files()
+    
     sample_names <- rrbgen_load_samples(external_bgen_files["16"])
     expect_equal(
         (sample_ids_from_sample_file),
@@ -99,7 +113,9 @@ test_that("can load sample names", {
 })
 
 test_that("can load SNPs", {
-
+    
+    skip_if_no_files()
+    
     var_info <- rrbgen_load_variant_info(external_bgen_files["16"])
 
     expect_equal(as.integer(var_info[, 1]), gen[, 1])
@@ -110,7 +126,9 @@ test_that("can load SNPs", {
 })
 
 test_that("can load everything", {
-
+    
+    skip_if_no_files()
+    
     for(B_bit_prob in c(8, 16, 24, 32)) {
 
         out <- rrbgen_load(external_bgen_files[as.character(B_bit_prob)])
@@ -136,6 +154,8 @@ test_that("can load everything", {
 
 test_that("can read, write then re-read a file", {
 
+    skip_if_no_files()
+    
     B_bit_prob <- 16
     out <- rrbgen_load(external_bgen_files[as.character(B_bit_prob)])
     gp <- out$gp
@@ -163,6 +183,8 @@ test_that("can read, write then re-read a file", {
 
 test_that("requesting a SNP that does not exist throws an error", {
 
+    skip_if_no_files()
+    
     var_info <- rrbgen_load_variant_info(external_bgen_files["16"])
     which_vars <- 5:8
     B_bit_prob <- 8
@@ -178,6 +200,8 @@ test_that("requesting a SNP that does not exist throws an error", {
 
 test_that("can load subset of SNPs by varid", {
 
+    skip_if_no_files()
+    
     var_info <- rrbgen_load_variant_info(external_bgen_files["16"])
     which_vars <- c(5, 8, 4, 6)
     B_bit_prob <- 8    
@@ -210,6 +234,8 @@ test_that("can load subset of SNPs by varid", {
 
 test_that("requesting a sample that does not exist throws an error", {
 
+    skip_if_no_files()
+    
     expect_error(
         rrbgen_load(
             bgen_file = external_bgen_files[as.character(8)],
@@ -223,6 +249,8 @@ test_that("requesting a sample that does not exist throws an error", {
 
 test_that("requesting a sample more than once throws an error", {
 
+    skip_if_no_files()
+    
     expect_error(
         rrbgen_load(
             bgen_file = external_bgen_files[as.character(8)],
@@ -235,6 +263,8 @@ test_that("requesting a sample more than once throws an error", {
 
 test_that("can load subset of samples", {
 
+    skip_if_no_files()
+    
     sample_names <- rrbgen_load_samples(external_bgen_files["16"])
     which_samples <- c(15, 92, 101, 45)
     which_samples <- 1:4
@@ -269,6 +299,8 @@ test_that("can load subset of samples", {
 
 test_that("can load subset of samples and SNPs", {
 
+    skip_if_no_files()
+    
     sample_names <- rrbgen_load_samples(external_bgen_files["16"])
     which_samples <- c(15, 92, 101, 45)
     samples_to_get <- sample_names[which_samples]    
