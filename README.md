@@ -19,7 +19,7 @@ cd rrbgen
 ./scripts/install-r-dependencies.R
 cd releases
 wget https://github.com/rwdavies/rrbgen/releases/download/0.0.5/rrbgen_0.0.5.tar.gz ## or curl -O
-R CMD INSTALL ./releases/rrbgen_0.0.5.tar.gz
+R CMD INSTALL rrbgen_0.0.5.tar.gz
 ```
 
 To install the latest development code in the repository, use `./scripts/build-and-install.sh`
