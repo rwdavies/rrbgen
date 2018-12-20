@@ -8,11 +8,18 @@ external_bgen_files <- sapply(bits, function(bit) {
     file.path(external_bgen_dir, paste0("example.", bit, "bits.bgen"))
 })
 names(external_bgen_files) <- as.character(bits)
+
 gen_file <- file.path(external_bgen_dir, "example.gen")    
+if (file.exists(gen_file)) {
+   gen <- read.table(gen_file)
+}  
+
 sample_file <- file.path(external_bgen_dir, "example.sample")
-gen <- read.table(gen_file)
-sample <- read.table(sample_file, sep = " ")
-sample_ids_from_sample_file <- as.character(sample[-c(1:2), ])
+if (file.exists(sample_file)) {
+   sample <- read.table(sample_file, sep = " ")
+   sample_ids_from_sample_file <- as.character(sample[-c(1:2), ])
+}  
+
 
 
 ## check for files, if they do not exist, do not run these tests
