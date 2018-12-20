@@ -1,7 +1,7 @@
 rrbgen
 ======
-**__Current Version: 0.0.4__**
-Release date: July 13, 2018
+**__Current Version: 0.0.5__**
+Release date: Dec 20, 2018
 
 A lightweight limited functionality R bgen read/write library
 
@@ -11,12 +11,21 @@ This library supports "v1.3" of bgen defined [here](http://www.well.ox.ac.uk/~ga
 
 ### Quick start on Linux and Mac
 
+Go to the releases page, download the latest release, and install
+
 ```
 git clone --recursive https://github.com/rwdavies/rrbgen.git
 cd rrbgen
 ./scripts/install-r-dependencies.R
-R CMD INSTALL ./releases/rrbgen_0.0.4.tar.gz
+cd releases
+wget https://github.com/rwdavies/rrbgen/releases/download/0.0.5/rrbgen_0.0.5.tar.gz ## or curl -O
+R CMD INSTALL ./releases/rrbgen_0.0.5.tar.gz
 ```
+
+To install the latest development code in the repository, use `./scripts/build-and-install.sh`
+
+To install an older release, either download an older release from the Github releases page, or use the older releases included with the repository in the `releases` folder
+
 If you see errors like "error while loading shared libraries: libmpc.so.2: cannot open shared object file: No such file or directory", then please run the following before the R CMD INSTALL
 ```
 ./scripts/install-package-dependencies.sh
