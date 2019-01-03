@@ -11,7 +11,7 @@ This library supports "v1.3" of bgen defined [here](http://www.well.ox.ac.uk/~ga
 
 ### Quick start on Linux and Mac
 
-Go to the releases page, download the latest release, and install
+Conda instructions below. To install from source, go to the releases page, download the latest release, and install
 
 ```
 git clone --recursive https://github.com/rwdavies/rrbgen.git
@@ -32,6 +32,17 @@ If you see errors like "error while loading shared libraries: libmpc.so.2: canno
 export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:`pwd`/install/lib/
 ```
 If you have any other installation problems or suggestions please report them as a github issue.
+
+### Install using conda
+
+rrbgen can be installed using [conda](https://conda.io/miniconda.html). Full tutorials can be found elsewhere, but briefly, something like this should work
+```
+wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
+bash Miniconda3-latest-Linux-x86_64.sh
+conda install rrbgen -c defaults -c bioconda -c conda-forge
+source activate
+R -e 'library("rrbgen")'
+```
 
 ### Example commands in R
 ```
