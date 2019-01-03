@@ -39,7 +39,7 @@ rrbgen can be installed using [conda](https://conda.io/miniconda.html). Full tut
 ```
 wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
 bash Miniconda3-latest-Linux-x86_64.sh
-conda install rrbgen -c defaults -c bioconda -c conda-forge
+conda install r-rrbgen -c defaults -c bioconda -c conda-forge
 source activate
 R -e 'library("rrbgen")'
 ```
