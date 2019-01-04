@@ -9,6 +9,8 @@ A lightweight limited functionality R bgen read/write library
 
 This library supports "v1.3" of bgen defined [here](http://www.well.ox.ac.uk/~gav/bgen_format/). It supports reading and writing using 8, 16, 24 or 32 bits per probability, using Layout = 2 and CompressedSNPBlocks = 1, for bi-allelic SNPs with samples of ploidy 2. Any other format specifications may crash unexpectedly without properly defined error.
 
+Note that the rrbgen library was primarily written to support writing bgen output when using [STITCH](https://github.com/rwdavies/STITCH). It has similar functionality to [rbgen](https://bitbucket.org/gavinband/bgen/wiki/rbgen), but provides an interface that suits how STITCH internally handles information when writing files, and is designed to be much lighter weight (fewer dependencies). 
+
 ### Quick start on Linux and Mac
 
 Conda instructions below. To install from source, go to the releases page, download the latest release, and install
