@@ -1,15 +1,14 @@
 Package: rrbgen
 Type: Package
 Title: A lightweight limited functionality R bgen read/write library
-Version: 0.0.6
-Date: 2018-12-20
+Version: 0.0.7
+Date: 2026-11-16
 Author: Robert William Davies
 Maintainer: Robert William Davies <robertwilliamdavies@gmail.com>
 Description: A lightweight R bgen library with limited functionality 
 Imports: Rcpp, RcppArmadillo, parallel
 LinkingTo: Rcpp, RcppArmadillo
 License: GPL | file LICENSE
-SystemRequirements: C++11
 NeedsCompilation: yes
 Suggests: testthat
 RoxygenNote: 6.1.0
