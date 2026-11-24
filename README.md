@@ -1,7 +1,7 @@
 rrbgen
 ======
-**__Current Version: 0.0.6__**
-Release date: Dec 20, 2018
+**__Current Version: 0.0.7__**
+Release date: Nov 24, 2026
 
 A lightweight limited functionality R bgen read/write library
 

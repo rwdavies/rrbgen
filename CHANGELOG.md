@@ -1,3 +1,5 @@
+* v0.0.7
+	* fix compatibility by removing system requirments
 * v0.0.6
 	* Actually skip some tests when external data not present
 * v0.0.5
